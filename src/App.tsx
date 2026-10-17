@@ -1,55 +1,123 @@
-import { useEffect, useRef, useState } from 'react';
-import { Avatar, Badge, Empty, Icon, Modal, ModuleIcon } from './components';
-import { modules, moduleById } from './data';
-import { canManage, formatDate, taskStatus, today, visibleData } from './domain';
+import { useEffect, useState } from 'react';
+import { Icon } from './components';
+import { modules } from './data';
+import { canManage, today, visibleData } from './domain';
+import { Dashboard } from './features/dashboard/Dashboard';
+import { EquipmentDetail, Notifications, SearchModal, TaskDetail } from './features/shell/AppDialogs';
 import { EquipmentForm, RecordDetail, RecordForm, TaskForm, TrainingForm, UserForm } from './forms';
-import { Dashboard, EquipmentPage, Planning, Records, RecordsTable, ReportsPage, SettingsPage, TrainingPage, UsersPage, type Actions } from './pages';
+import { MobileNavigation, Sidebar, Topbar } from './layout/AppChrome';
+import { navigation } from './navigation';
+import { EquipmentPage, Planning, Records, ReportsPage, SettingsPage, TrainingPage, UsersPage, type Actions } from './pages';
 import { useApp } from './store';
 import type { Equipment, MaintenanceRecord, ModuleId, Page, Task, TeamUser, Training } from './types';
 
-type Dialog = { type: 'record'; module?: ModuleId; task?: Task; equipmentId?: string } | { type: 'record-detail'; record: MaintenanceRecord } | { type: 'task'; task?: Task } | { type: 'task-detail'; task: Task } | { type: 'equipment'; equipment?: Equipment } | { type: 'equipment-detail'; equipment: Equipment } | { type: 'user'; user?: TeamUser } | { type: 'training'; material?: Training } | { type: 'search' } | { type: 'notifications' };
-const navigation: { id: Page; label: string; icon: string; group: string }[] = [
-  { id:'dashboard',label:'Tablero general',icon:'LayoutDashboard',group:'ESPACIO DE TRABAJO' },
-  { id:'planning',label:'Planificación',icon:'CalendarDays',group:'ESPACIO DE TRABAJO' },
-  { id:'records',label:'Registros de control',icon:'ClipboardCheck',group:'ESPACIO DE TRABAJO' },
-  { id:'equipment',label:'Equipos y sectores',icon:'Wrench',group:'ESPACIO DE TRABAJO' },
-  { id:'reports',label:'Reportes',icon:'FileSpreadsheet',group:'ESPACIO DE TRABAJO' },
-  { id:'training',label:'Capacitaciones',icon:'BookOpen',group:'CONOCIMIENTO' },
-  { id:'users',label:'Personas y permisos',icon:'Users',group:'ADMINISTRACIÓN' },
-  { id:'settings',label:'Configuración',icon:'Settings2',group:'ADMINISTRACIÓN' },
-];
-function readRoute(): { page: Page; module?: ModuleId } { const [path, query] = window.location.hash.replace('#','').split('?'); const page = navigation.some(n => n.id === path) ? path as Page : 'dashboard'; const mod = new URLSearchParams(query).get('module'); return { page, module: modules.some(m => m.id === mod) ? mod as ModuleId : undefined }; }
+type Dialog =
+  | { type: 'record'; module?: ModuleId; task?: Task; equipmentId?: string }
+  | { type: 'record-detail'; record: MaintenanceRecord }
+  | { type: 'task'; task?: Task }
+  | { type: 'task-detail'; task: Task }
+  | { type: 'equipment'; equipment?: Equipment }
+  | { type: 'equipment-detail'; equipment: Equipment }
+  | { type: 'user'; user?: TeamUser }
+  | { type: 'training'; material?: Training }
+  | { type: 'search' }
+  | { type: 'notifications' };
 
-export default function App() {
-  const { data, user, setUserId, saving, storageError } = useApp(); const visible = visibleData(data,user);
-  const [route,setRoute] = useState(readRoute); const [dialog,setDialog] = useState<Dialog | null>(null); const [sidebar,setSidebar] = useState(false); const [profile,setProfile] = useState(false);
-  const profileRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { function onHash() { setRoute(readRoute()); setSidebar(false); window.scrollTo({top:0}); } window.addEventListener('hashchange',onHash); return () => window.removeEventListener('hashchange',onHash); },[]);
-  useEffect(() => { function onKey(e:KeyboardEvent) { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setDialog({type:'search'}); } if (e.key === 'Escape') { setSidebar(false); setProfile(false); } } document.addEventListener('keydown',onKey); return () => document.removeEventListener('keydown',onKey); },[]);
-  useEffect(() => { function click(e:MouseEvent) { if (!profileRef.current?.contains(e.target as Node)) setProfile(false); } document.addEventListener('mousedown',click); return () => document.removeEventListener('mousedown',click); },[]);
-  const navigate = (page:Page,module?:ModuleId) => { const hash = `#${page}${module ? `?module=${module}` : ''}`; if (window.location.hash === hash) setRoute({page,module}); else window.location.hash = hash; setSidebar(false); };
-  const actions: Actions = { navigate, newRecord: (module,task,equipmentId) => setDialog({type:'record',module,task,equipmentId}), viewRecord:record => setDialog({type:'record-detail',record}), editTask:task => setDialog({type:'task',task}), viewTask:task => setDialog({type:'task-detail',task}), editEquipment:equipment => setDialog({type:'equipment',equipment}), viewEquipment:equipment => setDialog({type:'equipment-detail',equipment}), editUser:user => setDialog({type:'user',user}), editTraining:material => setDialog({type:'training',material}) };
-  const close = () => setDialog(null); const overdue = visible.tasks.filter(t => t.active && t.due < today()).length; const header = navigation.find(n => n.id === route.page)!;
-  return <div className="app-shell"><a className="skip-link" href="#main-content" onClick={e => {e.preventDefault(); document.getElementById('main-content')?.focus();}}>Ir al contenido</a>{sidebar && <button className="sidebar-overlay" aria-label="Cerrar menú de navegación" onClick={() => setSidebar(false)} />}
-    <aside className={`sidebar ${sidebar ? 'open' : ''}`}><button className="brand" onClick={() => navigate('dashboard')} aria-label="CER Gestión, ir al tablero"><img src="/cer-logo.png" alt="C.E.R." /><span><strong>CER<span>gestión</span></strong><small>Cuidamos cada detalle.</small></span></button><div className="workspace-switch"><span className="workspace-symbol"><Icon name="Building2" size={17} /></span><span><strong>{data.settings.location}</strong><small>Centro de Enfermedades Renales</small></span><span className="status-dot" /></div><nav aria-label="Navegación principal">{['ESPACIO DE TRABAJO','CONOCIMIENTO','ADMINISTRACIÓN'].map(group => <div className="nav-group" key={group}><h2>{group}</h2>{navigation.filter(n => n.group === group && (n.id !== 'users' || canManage(user))).map(n => <button key={n.id} className={`nav-item ${route.page === n.id ? 'active' : ''}`} aria-current={route.page === n.id ? 'page' : undefined} onClick={() => navigate(n.id)}><Icon name={n.icon} size={19} /><span>{n.label}</span>{n.id === 'planning' && overdue > 0 && <b className="nav-count">{overdue}</b>}</button>)}</div>)}</nav><div className="sidebar-bottom"><div className="care-card"><span><Icon name="ShieldCheck" size={19} /><i /></span><strong>El cuidado empieza acá.</strong><p>Un centro conectado.<br />Un equipo que acompaña.</p><button onClick={() => navigate('planning')}>Ver el plan del centro<Icon name="ArrowUpRight" size={14} /></button></div><div className="sidebar-footer"><span className="live-dot" /><span>CER · Plataforma de gestión</span><small>v0.1</small></div></div></aside>
-    <div className="app-main"><header className="topbar"><div className="breadcrumb"><button className="icon-button mobile-menu" aria-label="Abrir menú" onClick={() => setSidebar(true)}><Icon name="Menu" /></button><span className="breadcrumb-root">Mi espacio</span><Icon name="ChevronRight" size={13} /><strong>{header.label}</strong></div><div className="topbar-actions"><button className="global-search" onClick={() => setDialog({type:'search'})}><Icon name="Search" size={17} /><span>Buscar en CER</span><kbd>⌘ K</kbd></button><button className="icon-button notification-button" aria-label={`Notificaciones: ${overdue} tareas vencidas`} onClick={() => setDialog({type:'notifications'})}><Icon name="Bell" size={20} />{overdue > 0 && <i />}</button><div className="profile-menu" ref={profileRef}><button className="profile-trigger" aria-label="Abrir menú de perfil" aria-expanded={profile} onClick={() => setProfile(p => !p)}><Avatar initials={user.initials} /><span><strong>{user.name}</strong><small>{user.role}</small></span><Icon name="ChevronDown" size={13} /></button>{profile && <div className="profile-dropdown"><div className="dropdown-heading">PERFILES DE DEMOSTRACIÓN<small>Probá la vista de cada integrante</small></div>{data.users.filter(u => u.active).map(u => <button key={u.id} onClick={() => {setUserId(u.id); setProfile(false); setDialog(null); navigate('dashboard');}}><Avatar initials={u.initials} className="tiny-avatar" /><span><strong>{u.name}</strong><small>{u.role}</small></span>{u.id === user.id && <Icon name="Check" size={16} />}</button>)}</div>}</div></div></header>
-    <div className="preview-strip"><span><Icon name="Monitor" size={13} />Vista de presentación<span className="strip-separator">·</span><span className="preview-detail">Datos de ejemplo y cambios guardados en este navegador</span></span><span className={storageError ? 'storage-warning' : ''}><i className={saving ? 'saving-dot' : 'saved-dot'} />{storageError ? 'Revisar almacenamiento' : saving ? 'Guardando…' : 'Guardado local'}</span></div>
-    {storageError && <div className="storage-error" role="alert"><Icon name="TriangleAlert" size={16} />{storageError}</div>}
-    <main id="main-content" className="main-content" tabIndex={-1}>{route.page === 'dashboard' && <Dashboard actions={actions} />}{route.page === 'planning' && <Planning actions={actions} />}{route.page === 'records' && <Records key={`${user.id}-${route.module ?? ''}`} actions={actions} initialModule={route.module} />}{route.page === 'equipment' && <EquipmentPage actions={actions} />}{route.page === 'reports' && <ReportsPage />}{route.page === 'training' && <TrainingPage actions={actions} />}{route.page === 'users' && <UsersPage actions={actions} />}{route.page === 'settings' && <SettingsPage />}</main><footer className="app-footer"><span>Centro de Enfermedades Renales</span><span>Diseñado para acompañar el cuidado.</span></footer></div>
-    {dialog?.type === 'record' && <RecordForm initialModule={dialog.module} initialEquipment={dialog.equipmentId} task={dialog.task} onClose={close} />}
-    {dialog?.type === 'record-detail' && <RecordDetail record={dialog.record} onClose={close} />}
-    {dialog?.type === 'task' && user.role !== 'Responsable técnico' && <TaskForm task={dialog.task} onClose={close} />}
-    {dialog?.type === 'equipment' && canManage(user) && <EquipmentForm equipment={dialog.equipment} onClose={close} />}
-    {dialog?.type === 'user' && canManage(user) && <UserForm member={dialog.user} onClose={close} />}
-    {dialog?.type === 'training' && canManage(user) && <TrainingForm material={dialog.material} onClose={close} />}
-    {dialog?.type === 'task-detail' && <TaskDetail task={dialog.task} actions={actions} onClose={close} />}
-    {dialog?.type === 'equipment-detail' && <EquipmentDetail equipment={dialog.equipment} actions={actions} onClose={close} />}
-    {dialog?.type === 'search' && <SearchModal actions={actions} onClose={close} />}
-    {dialog?.type === 'notifications' && <Notifications actions={actions} onClose={close} />}
-  </div>;
+function readRoute(): { page: Page; module?: ModuleId } {
+  const [path, query] = window.location.hash.replace('#', '').split('?');
+  const page = navigation.some(item => item.id === path) ? path as Page : 'dashboard';
+  const module = new URLSearchParams(query).get('module');
+  return { page, module: modules.some(item => item.id === module) ? module as ModuleId : undefined };
 }
 
-function TaskDetail({ task, actions, onClose }: { task:Task; actions:Actions; onClose:()=>void }) { const { data,user } = useApp(); const equipment = data.equipment.find(e => e.id === task.equipmentId); const owner = data.users.find(u => u.id === task.assignedTo); return <Modal title="Detalle de la tarea" subtitle={moduleById(task.module).name} onClose={onClose}><div className="modal-body"><div className="detail-summary"><ModuleIcon module={task.module} /><Badge>{taskStatus(task,data.settings.advanceDays)}</Badge></div><h2 className="task-detail-title">{task.title}</h2><div className="detail-metadata two"><div><span>Fecha programada</span><strong>{formatDate(task.due)}</strong></div><div><span>Periodicidad</span><strong>{task.frequency}</strong></div><div><span>Equipo / sector</span><strong>{equipment?.name ?? 'Sin equipo'}</strong></div><div><span>Ubicación</span><strong>{equipment?.location ?? '—'}</strong></div></div><div className="responsible-note"><Avatar initials={owner?.initials ?? '—'} /><div><small>Responsable asignado</small><strong>{owner?.name ?? 'Sin asignar'}</strong></div></div>{task.notes && <section className="detail-section"><h3>Indicaciones</h3><p className="preserve-lines">{task.notes}</p></section>}<div className="inline-notice soft"><Icon name="RefreshCw" /><span>Al registrar este control, se actualizará la fecha de la próxima tarea según su periodicidad.</span></div></div><footer className="modal-footer">{user.role !== 'Responsable técnico' ? <button className="button secondary" onClick={() => actions.editTask(task)}><Icon name="Pencil" size={16} />Editar tarea</button> : <button className="button secondary" onClick={onClose}>Cerrar</button>}<button className="button primary" onClick={() => actions.newRecord(task.module,task)}><Icon name="ClipboardCheck" size={16} />Registrar control</button></footer></Modal>; }
-function EquipmentDetail({ equipment, actions,onClose }: { equipment:Equipment; actions:Actions; onClose:()=>void }) { const { data,user } = useApp(); const records = data.records.filter(r => r.equipmentId === equipment.id).sort((a,b) => b.date.localeCompare(a.date)); const tasks = data.tasks.filter(t => t.active && t.equipmentId === equipment.id); return <Modal title={equipment.name} subtitle={`${equipment.code} · ${moduleById(equipment.module).name}`} onClose={onClose} wide><div className="modal-body"><div className="detail-summary"><ModuleIcon module={equipment.module} /><Badge>{equipment.status}</Badge></div><div className="detail-metadata"><div><span>Ubicación</span><strong>{equipment.location}</strong></div><div><span>Modelo</span><strong>{equipment.model || 'Sin especificar'}</strong></div><div><span>Número de serie</span><strong>{equipment.serial || 'Sin especificar'}</strong></div></div><section className="detail-section"><h3>Mantenimientos programados <span className="count-pill">{tasks.length}</span></h3>{tasks.map(t => <button className="detail-task" onClick={() => actions.viewTask(t)} key={t.id}><span><strong>{t.title}</strong><small>{t.frequency} · {formatDate(t.due)}</small></span><Icon name="ChevronRight" size={16} /></button>)}{!tasks.length && <p className="muted">No hay tareas programadas para este equipo.</p>}</section><section className="detail-section"><h3>Historial del equipo <span className="count-pill">{records.length}</span></h3><RecordsTable records={records.slice(0,5)} actions={actions} compact />{records.length > 5 && <button className="text-button mt" onClick={() => {onClose(); actions.navigate('records',equipment.module);}}>Ver todos los registros del módulo<Icon name="ArrowRight" size={15} /></button>}</section></div><footer className="modal-footer">{canManage(user) ? <button className="button secondary" onClick={() => actions.editEquipment(equipment)}><Icon name="Pencil" size={16} />Editar ficha</button> : <button className="button secondary" onClick={onClose}>Cerrar</button>}<button className="button primary" onClick={() => actions.newRecord(equipment.module,undefined,equipment.id)}><Icon name="Plus" size={17} />Nuevo control</button></footer></Modal>; }
-function SearchModal({ actions,onClose }: { actions:Actions; onClose:()=>void }) { const { data,user } = useApp(); const visible = visibleData(data,user); const [query,setQuery] = useState(''); const normalized = query.trim().toLowerCase(); const tasks = visible.tasks.filter(t => t.title.toLowerCase().includes(normalized)).slice(0,4); const equipment = visible.equipment.filter(e => `${e.name} ${e.code}`.toLowerCase().includes(normalized)).slice(0,4); const records = visible.records.filter(r => `${r.id} ${moduleById(r.module).name}`.toLowerCase().includes(normalized)).slice(0,4); const groups: {label:string;items:(Equipment|Task|MaintenanceRecord)[]}[] = [{label:'Equipos y sectores',items:equipment},{label:'Tareas',items:tasks},{label:'Registros',items:records}]; return <Modal title="Buscar en CER" subtitle="Encontrá equipos, tareas y registros en un mismo lugar." onClose={onClose}><div className="modal-body"><div className="search-field search-large"><Icon name="Search" /><input autoFocus placeholder="Escribí un equipo, módulo o registro…" aria-label="Búsqueda global" value={query} onChange={e => setQuery(e.target.value)} /></div>{!normalized ? <div className="search-suggestions"><p className="muted">Accesos rápidos</p>{navigation.slice(0,6).map(n => <button key={n.id} onClick={() => {onClose();actions.navigate(n.id);}}><Icon name={n.icon} /><span>{n.label}</span><Icon name="ArrowUpRight" size={15} /></button>)}</div> : <>{groups.map(({label,items}) => <section key={label} className="search-results"><h3>{label}</h3>{items.map(item => <button key={item.id} onClick={() => {'code' in item ? actions.viewEquipment(item) : 'title' in item ? actions.viewTask(item) : actions.viewRecord(item);}}><ModuleIcon module={item.module} small /><span>{'name' in item ? item.name : 'title' in item ? item.title : `${moduleById(item.module).name} · ${item.id}`}</span><Icon name="ArrowUpRight" size={15} /></button>)}{!items.length && <p className="muted small-text">Sin coincidencias</p>}</section>)}</>}</div></Modal>; }
-function Notifications({actions,onClose}:{actions:Actions;onClose:()=>void}) { const {data,user} = useApp(); const tasks = visibleData(data,user).tasks.filter(t => t.active && t.due <= today()).sort((a,b)=>a.due.localeCompare(b.due)); return <Modal title="Tu centro, al día" subtitle="Tareas vencidas y controles pendientes para hoy." onClose={onClose}><div className="modal-body notification-list">{tasks.length ? tasks.map(t => <button key={t.id} onClick={() => actions.viewTask(t)}><span className={`module-icon ${t.due < today() ? 'amber':'blue'}`}><Icon name={t.due < today() ? 'TriangleAlert':'Clock3'} /></span><span><strong>{t.title}</strong><small>{t.due < today() ? `Venció el ${formatDate(t.due)}` : 'Programado para hoy'} · {moduleById(t.module).name}</small></span><Icon name="ChevronRight" size={16}/></button>) : <Empty icon="CheckCheck" title="Todo al día" description="No hay tareas vencidas ni controles pendientes para hoy." />}</div><footer className="modal-footer"><span className="muted small-text">Avisos dentro de la aplicación</span><button className="button secondary" onClick={() => {onClose();actions.navigate('planning');}}>Ver planificación<Icon name="ArrowRight" size={15}/></button></footer></Modal>; }
+export default function App() {
+  const { data, user, setUserId, saving, storageError } = useApp();
+  const visible = visibleData(data, user);
+  const [route, setRoute] = useState(readRoute);
+  const [dialog, setDialog] = useState<Dialog | null>(null);
+  const [sidebar, setSidebar] = useState(false);
+  const [profile, setProfile] = useState(false);
+
+  useEffect(() => {
+    function onHashChange() { setRoute(readRoute()); setSidebar(false); window.scrollTo({ top: 0 }); }
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); setDialog({ type: 'search' }); }
+      if (event.key === 'Escape') { setSidebar(false); setProfile(false); }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  const navigate = (page: Page, module?: ModuleId) => {
+    const hash = `#${page}${module ? `?module=${module}` : ''}`;
+    if (window.location.hash === hash) setRoute({ page, module });
+    else window.location.hash = hash;
+    setSidebar(false);
+  };
+
+  const actions: Actions = {
+    navigate,
+    newRecord: (module, task, equipmentId) => setDialog({ type: 'record', module, task, equipmentId }),
+    viewRecord: record => setDialog({ type: 'record-detail', record }),
+    editTask: task => setDialog({ type: 'task', task }),
+    viewTask: task => setDialog({ type: 'task-detail', task }),
+    editEquipment: equipment => setDialog({ type: 'equipment', equipment }),
+    viewEquipment: equipment => setDialog({ type: 'equipment-detail', equipment }),
+    editUser: selectedUser => setDialog({ type: 'user', user: selectedUser }),
+    editTraining: material => setDialog({ type: 'training', material }),
+  };
+
+  const closeDialog = () => setDialog(null);
+  const overdue = visible.tasks.filter(task => task.active && task.due < today()).length;
+
+  function changeProfile(userId: string) {
+    setUserId(userId);
+    setProfile(false);
+    setDialog(null);
+    navigate('dashboard');
+  }
+
+  return (
+    <div className="app-shell">
+      <a className="skip-link" href="#main-content">Ir al contenido</a>
+      <Sidebar currentPage={route.page} location={data.settings.location} overdue={overdue} open={sidebar} user={user} onClose={() => setSidebar(false)} onNavigate={navigate} />
+      <div className="app-main">
+        <Topbar currentPage={route.page} overdue={overdue} profileOpen={profile} user={user} users={data.users} onMenu={() => setSidebar(true)} onNotifications={() => setDialog({ type: 'notifications' })} onProfileChange={changeProfile} onProfileToggle={() => setProfile(value => !value)} onSearch={() => setDialog({ type: 'search' })} />
+        <div className="preview-strip premium-preview" role="status">
+          <span><Icon name="Monitor" size={14} /><strong>Demostración</strong><span className="preview-detail">Datos de ejemplo · Sin conexión a Supabase</span></span>
+          <span className={storageError ? 'storage-warning' : ''}><i className={saving ? 'saving-dot' : 'saved-dot'} />{storageError ? 'Revisar almacenamiento' : saving ? 'Guardando…' : 'Guardado en este navegador'}</span>
+        </div>
+        {storageError && <div className="storage-error" role="alert"><Icon name="TriangleAlert" size={17} />{storageError}</div>}
+        <main id="main-content" className="main-content" tabIndex={-1}>
+          {route.page === 'dashboard' && <Dashboard actions={actions} />}
+          {route.page === 'planning' && <Planning actions={actions} />}
+          {route.page === 'records' && <Records key={`${user.id}-${route.module ?? ''}`} actions={actions} initialModule={route.module} />}
+          {route.page === 'equipment' && <EquipmentPage actions={actions} />}
+          {route.page === 'reports' && <ReportsPage />}
+          {route.page === 'training' && <TrainingPage actions={actions} />}
+          {route.page === 'users' && <UsersPage actions={actions} />}
+          {route.page === 'settings' && <SettingsPage />}
+        </main>
+        <footer className="app-footer"><span>Centro de Enfermedades Renales</span><span>Prototipo frontend · Datos de demostración</span></footer>
+      </div>
+
+      <MobileNavigation currentPage={route.page} onMenu={() => setSidebar(true)} onNavigate={navigate} onNewRecord={() => actions.newRecord()} />
+
+      {dialog?.type === 'record' && <RecordForm initialModule={dialog.module} initialEquipment={dialog.equipmentId} task={dialog.task} onClose={closeDialog} />}
+      {dialog?.type === 'record-detail' && <RecordDetail record={dialog.record} onClose={closeDialog} />}
+      {dialog?.type === 'task' && user.role !== 'Responsable técnico' && <TaskForm task={dialog.task} onClose={closeDialog} />}
+      {dialog?.type === 'equipment' && canManage(user) && <EquipmentForm equipment={dialog.equipment} onClose={closeDialog} />}
+      {dialog?.type === 'user' && canManage(user) && <UserForm member={dialog.user} onClose={closeDialog} />}
+      {dialog?.type === 'training' && canManage(user) && <TrainingForm material={dialog.material} onClose={closeDialog} />}
+      {dialog?.type === 'task-detail' && <TaskDetail task={dialog.task} actions={actions} onClose={closeDialog} />}
+      {dialog?.type === 'equipment-detail' && <EquipmentDetail equipment={dialog.equipment} actions={actions} onClose={closeDialog} />}
+      {dialog?.type === 'search' && <SearchModal actions={actions} onClose={closeDialog} />}
+      {dialog?.type === 'notifications' && <Notifications actions={actions} onClose={closeDialog} />}
+    </div>
+  );
+}
