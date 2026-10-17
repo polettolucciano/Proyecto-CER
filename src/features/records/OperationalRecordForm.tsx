@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Avatar, Field, Icon, Modal, ModuleIcon, Photo } from '../../components';
 import { moduleById, modules } from '../../data';
 import { advanceTask, allowed, formatDate, today, uid } from '../../domain';
@@ -77,12 +77,16 @@ function evidenceCategories(moduleId: ModuleId) {
 export function OperationalRecordForm({ initialModule, initialEquipment, task, sourceRecord, onClose }: { initialModule?: ModuleId; initialEquipment?: string; task?: Task; sourceRecord?: MaintenanceRecord; onClose: () => void }) {
   const { data, user, update, toast } = useApp();
   const available = modules.filter(module => allowed(user, module.id));
-  const [moduleId, setModuleId] = useState<ModuleId>(sourceRecord?.module ?? task?.module ?? initialModule ?? available[0]?.id ?? 'generator');
+  const initialModuleId = sourceRecord?.module ?? task?.module ?? initialModule ?? available[0]?.id ?? 'generator';
+  const initialEquipmentId = sourceRecord?.equipmentId ?? task?.equipmentId ?? initialEquipment ?? data.equipment.find(item => item.module === initialModuleId)?.id ?? '';
+  const initialTaskId = sourceRecord?.taskId ?? task?.id ?? '';
+  const initialDate = sourceRecord?.date ?? today();
+  const [moduleId, setModuleId] = useState<ModuleId>(initialModuleId);
   const module = moduleById(moduleId);
   const meta = moduleMeta[moduleId] ?? { form: 'Registro de control', title: module.name, cadence: module.frequency, guidance: module.description };
-  const [equipmentId, setEquipmentId] = useState(sourceRecord?.equipmentId ?? task?.equipmentId ?? initialEquipment ?? data.equipment.find(item => item.module === moduleId)?.id ?? '');
-  const [taskId, setTaskId] = useState(sourceRecord?.taskId ?? task?.id ?? '');
-  const [date, setDate] = useState(sourceRecord?.date ?? today());
+  const [equipmentId, setEquipmentId] = useState(initialEquipmentId);
+  const [taskId, setTaskId] = useState(initialTaskId);
+  const [date, setDate] = useState(initialDate);
   const [values, setValues] = useState<Values>(sourceRecord?.values ?? {});
   const [notes, setNotes] = useState(sourceRecord?.notes ?? '');
   const [result, setResult] = useState<'Conforme' | 'Con observaciones'>(sourceRecord?.result === 'attention' ? 'Con observaciones' : 'Conforme');
@@ -91,12 +95,27 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const submitLock = useRef(false);
   const equipment = data.equipment.find(item => item.id === equipmentId);
   const requiredFields = useMemo(() => module.sections.flatMap(section => section.fields).filter(field => !field.optional), [module]);
   const completedRequired = requiredFields.filter(field => values[field.id]?.trim()).length;
   const hasIssue = Object.values(values).includes('MAL') || result === 'Con observaciones';
   const duplicates = findPotentialDuplicates(data.records, { module: moduleId, equipmentId, date, taskId: taskId || undefined, excludeRecordId: sourceRecord?.id });
+  const dirty = step > 0 || moduleId !== initialModuleId || equipmentId !== initialEquipmentId || taskId !== initialTaskId || date !== initialDate || notes !== (sourceRecord?.notes ?? '') || photos.length !== (sourceRecord?.photos.length ?? 0);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const protectDraft = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', protectDraft);
+    return () => window.removeEventListener('beforeunload', protectDraft);
+  }, [dirty]);
+
+  function requestClose() {
+    if (dirty && !submitting) setConfirmClose(true);
+    else onClose();
+  }
 
   function changeModule(value: ModuleId) {
     setModuleId(value);
@@ -126,10 +145,10 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
     document.querySelector('.modal-body')?.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
     if (step < 2) { next(); return; }
-    if (submitting) return;
+    if (submitting || submitLock.current) return;
     if (hasIssue && !notes.trim()) {
       setError('Describí la observación para que el responsable pueda revisarla.');
       return;
@@ -146,6 +165,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
       setError('Este registro ya no es la versión vigente y no puede rectificarse nuevamente.');
       return;
     }
+    submitLock.current = true;
     setSubmitting(true);
     const record: MaintenanceRecord = {
       id: `CER-${new Date().getFullYear()}-${uid('').slice(1, 9).toUpperCase()}`,
@@ -163,12 +183,18 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
       revision: sourceRecord ? sourceRecord.revision + 1 : 1,
       supersedesId: sourceRecord?.id,
     };
-    update(workspace => ({
+    const saved = await update(workspace => ({
       ...workspace,
       records: [record, ...workspace.records.map(item => item.id === sourceRecord?.id ? { ...item, status: 'superseded' as const, supersededById: record.id } : item)],
       tasks: sourceRecord ? workspace.tasks : workspace.tasks.map(item => item.id === taskId ? advanceTask(item, date) : item),
       auditEvents: [auditEvent(user.id, sourceRecord ? 'record.corrected' : 'record.created', record.id, sourceRecord ? `Rectificó el registro ${sourceRecord.id}` : 'Registró un nuevo control', sourceRecord?.id), ...workspace.auditEvents],
     }));
+    if (!saved) {
+      submitLock.current = false;
+      setSubmitting(false);
+      setError('No se pudo confirmar el guardado. El formulario continúa abierto para que no pierdas la información.');
+      return;
+    }
     toast(sourceRecord ? 'Rectificación guardada. La versión anterior quedó preservada.' : 'Control registrado. El historial y la planificación se actualizaron.');
     onClose();
   }
@@ -185,7 +211,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
     setPhotos(current => [...current, ...valid.map(file => ({ id: uid('photo'), name: file.name, type: file.type, data: file, category }))]);
   }
 
-  return <Modal title={sourceRecord ? `Rectificar · ${meta.title}` : meta.title} subtitle={`${meta.form} · ${meta.cadence}`} onClose={onClose} wide>
+  return <Modal title={sourceRecord ? `Rectificar · ${meta.title}` : meta.title} subtitle={`${meta.form} · ${meta.cadence}`} onClose={requestClose} wide>
     <div className="operational-form-shell">
       <div className="operational-progress" aria-label={`Paso ${step + 1} de 3`}>{['Identificación', 'Verificaciones', 'Cierre y evidencia'].map((label, index) => <div className={step === index ? 'current' : step > index ? 'done' : ''} key={label}><span>{step > index ? <Icon name="Check" size={13} /> : index + 1}</span><strong>{label}</strong></div>)}</div>
       <form ref={formRef} noValidate onSubmit={submit}>
@@ -224,8 +250,9 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
             {error && <p className="form-error operational-error" role="alert"><Icon name="TriangleAlert" size={16} />{error}</p>}
           </div>
         </div>
-        <footer className="modal-footer operational-footer"><button type="button" className="button secondary" onClick={() => { if (step > 0) { setStep(value => value - 1); setError(''); } else onClose(); }}>{step > 0 ? 'Volver' : 'Cancelar'}</button><span>Paso {step + 1} de 3</span><button type="submit" className="button primary" disabled={submitting}>{step === 2 ? submitting ? 'Guardando…' : 'Guardar control' : 'Continuar'}<Icon name={step === 2 ? 'Check' : 'ArrowRight'} size={16} /></button></footer>
+        <footer className="modal-footer operational-footer"><button type="button" className="button secondary" onClick={() => { if (step > 0) { setStep(value => value - 1); setError(''); } else requestClose(); }}>{step > 0 ? 'Volver' : 'Cancelar'}</button><span>Paso {step + 1} de 3</span><button type="submit" className="button primary" disabled={submitting}>{step === 2 ? submitting ? 'Guardando…' : 'Guardar control' : 'Continuar'}<Icon name={step === 2 ? 'Check' : 'ArrowRight'} size={16} /></button></footer>
       </form>
+      {confirmClose && <div className="discard-confirmation" role="dialog" aria-modal="true" aria-labelledby="discard-title"><div><span className="discard-icon"><Icon name="TriangleAlert" /></span><h3 id="discard-title">¿Salir sin guardar?</h3><p>Los cambios realizados en este control se perderán.</p><div><button className="button secondary" type="button" onClick={() => setConfirmClose(false)}>Continuar completando</button><button className="button danger" type="button" onClick={onClose}>Descartar cambios</button></div></div></div>}
     </div>
   </Modal>;
 }

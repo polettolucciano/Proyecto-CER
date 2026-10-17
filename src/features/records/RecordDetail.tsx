@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { Badge, Field, Icon, Modal, ModuleIcon, Photo } from '../../components';
 import { moduleById } from '../../data';
 import { canManage, formatDate } from '../../domain';
@@ -11,6 +11,8 @@ const statusLabel = (record: MaintenanceRecord) => record.status === 'active' ? 
 export function RecordDetail({ record, onClose, onCorrect }: { record: MaintenanceRecord; onClose: () => void; onCorrect: () => void }) {
   const { data, user, update, toast } = useApp();
   const [voiding, setVoiding] = useState(false);
+  const [voidSubmitting, setVoidSubmitting] = useState(false);
+  const voidLock = useRef(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const module = moduleById(record.module);
@@ -19,19 +21,29 @@ export function RecordDetail({ record, onClose, onCorrect }: { record: Maintenan
   const events = data.auditEvents.filter(event => event.entityId === record.id || event.relatedEntityId === record.id).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
   const mutable = canManage(user) && record.status === 'active';
 
-  function voidRecord(event: FormEvent) {
+  async function voidRecord(event: FormEvent) {
     event.preventDefault();
+    if (voidSubmitting || voidLock.current) return;
     const cleanReason = reason.trim();
     if (cleanReason.length < 10) {
       setError('Explicá el motivo de la anulación con al menos 10 caracteres.');
       return;
     }
+    voidLock.current = true;
+    setVoidSubmitting(true);
+    setError('');
     const occurredAt = new Date().toISOString();
-    update(workspace => ({
+    const saved = await update(workspace => ({
       ...workspace,
       records: workspace.records.map(item => item.id === record.id ? { ...item, status: 'voided', voidedAt: occurredAt, voidedBy: user.id, voidReason: cleanReason } : item),
       auditEvents: [auditEvent(user.id, 'record.voided', record.id, `Anuló el registro. Motivo: ${cleanReason}`), ...workspace.auditEvents],
     }));
+    if (!saved) {
+      voidLock.current = false;
+      setVoidSubmitting(false);
+      setError('No se pudo confirmar la anulación. El registro continúa vigente.');
+      return;
+    }
     toast('Registro anulado sin eliminar su historial.');
     onClose();
   }
@@ -45,7 +57,7 @@ export function RecordDetail({ record, onClose, onCorrect }: { record: Maintenan
       <section className="detail-section"><h3>Observaciones</h3><p className="preserve-lines">{record.notes || 'Sin observaciones adicionales.'}</p></section>
       {record.photos.length > 0 && <section className="detail-section"><h3>Evidencia fotográfica</h3><div className="photo-grid categorized">{record.photos.map(photo => <figure key={photo.id}><Photo attachment={photo} />{photo.category && <figcaption>{photo.category}</figcaption>}</figure>)}</div></section>}
       <section className="detail-section audit-section"><h3>Trazabilidad del registro</h3><div className="audit-timeline"><div><span><Icon name="FilePlus2" size={14} /></span><p><strong>Registro creado</strong><small>{new Date(record.createdAt).toLocaleString('es-AR')} · {owner?.name ?? 'Sin asignar'}</small></p></div>{events.map(item => { const actor = data.users.find(member => member.id === item.actorId); return <div key={item.id}><span><Icon name={item.action === 'record.voided' ? 'Ban' : item.action === 'record.corrected' ? 'History' : 'Check'} size={14} /></span><p><strong>{item.summary}</strong><small>{new Date(item.occurredAt).toLocaleString('es-AR')} · {actor?.name ?? 'Usuario no disponible'}</small></p></div>; })}</div></section>
-      {voiding && <form className="void-record-panel" onSubmit={voidRecord}><div><Icon name="TriangleAlert" /><span><strong>Anular sin borrar</strong><small>El registro seguirá visible en el historial y en la auditoría.</small></span></div><Field label="Motivo de la anulación" required hint="Indicá por qué el registro no debe considerarse vigente."><textarea autoFocus required minLength={10} rows={3} value={reason} onChange={event => setReason(event.target.value)} /></Field>{error && <p className="form-error" role="alert">{error}</p>}<div><button className="button secondary" type="button" onClick={() => { setVoiding(false); setError(''); }}>Cancelar</button><button className="button danger" type="submit"><Icon name="Ban" size={16} />Confirmar anulación</button></div></form>}
+      {voiding && <form className="void-record-panel" onSubmit={voidRecord}><div><Icon name="TriangleAlert" /><span><strong>Anular sin borrar</strong><small>El registro seguirá visible en el historial y en la auditoría.</small></span></div><Field label="Motivo de la anulación" required hint="Indicá por qué el registro no debe considerarse vigente."><textarea autoFocus required minLength={10} rows={3} value={reason} disabled={voidSubmitting} onChange={event => setReason(event.target.value)} /></Field>{error && <p className="form-error" role="alert">{error}</p>}<div><button className="button secondary" type="button" disabled={voidSubmitting} onClick={() => { setVoiding(false); setError(''); }}>Cancelar</button><button className="button danger" type="submit" disabled={voidSubmitting}><Icon name="Ban" size={16} />{voidSubmitting ? 'Anulando…' : 'Confirmar anulación'}</button></div></form>}
     </div>
     <footer className="modal-footer"><span className="muted">Registrado el {formatDate(record.createdAt.slice(0, 10))}</span><div className="record-detail-actions">{mutable && !voiding && <><button className="button secondary" onClick={onCorrect}><Icon name="History" size={16} />Rectificar</button><button className="button danger-ghost" onClick={() => setVoiding(true)}><Icon name="Ban" size={16} />Anular</button></>}<button className="button primary" onClick={onClose}>Listo<Icon name="Check" size={16} /></button></div></footer>
   </Modal>;
