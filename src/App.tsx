@@ -3,11 +3,12 @@ import { Icon } from './components';
 import { modules } from './data';
 import { canManage, today, visibleData } from './domain';
 import { Dashboard } from './features/dashboard/Dashboard';
+import { ReportsPage } from './features/reports/ReportsPage';
 import { EquipmentDetail, Notifications, SearchModal, TaskDetail } from './features/shell/AppDialogs';
 import { EquipmentForm, RecordDetail, RecordForm, TaskForm, TrainingForm, UserForm } from './forms';
 import { MobileNavigation, Sidebar, Topbar } from './layout/AppChrome';
 import { navigation } from './navigation';
-import { EquipmentPage, Planning, Records, ReportsPage, SettingsPage, TrainingPage, UsersPage, type Actions } from './pages';
+import { EquipmentPage, Planning, Records, SettingsPage, TrainingPage, UsersPage, type Actions } from './pages';
 import { useApp } from './store';
 import type { Equipment, MaintenanceRecord, ModuleId, Page, Task, TeamUser, Training } from './types';
 
