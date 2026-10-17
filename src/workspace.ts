@@ -11,6 +11,9 @@ export function normalizeWorkspace(value: unknown): Workspace | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const candidate = value as LegacyWorkspace;
   if (!Array.isArray(candidate.equipment) || !Array.isArray(candidate.users) || !Array.isArray(candidate.tasks) || !Array.isArray(candidate.records) || !Array.isArray(candidate.training) || !candidate.settings) return undefined;
+  if (!candidate.users.some(user => user && user.active && user.role === 'Administrador')) return undefined;
+  if (!candidate.records.every(record => record && typeof record.id === 'string' && typeof record.createdAt === 'string' && record.values && typeof record.values === 'object' && Array.isArray(record.photos))) return undefined;
+  if (!candidate.training.every(material => material && typeof material.id === 'string' && typeof material.url === 'string')) return undefined;
   return {
     ...candidate,
     version: 2,

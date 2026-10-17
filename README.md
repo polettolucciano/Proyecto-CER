@@ -13,7 +13,9 @@ Funcionalidades disponibles:
 - Formularios documentados para grupo electrógeno, ósmosis diaria y loop.
 - Evidencia fotográfica local.
 - Historial con búsqueda, filtros, revisiones, rectificaciones y anulaciones trazables.
+- Guardado confirmado antes de cerrar formularios, bloqueo de dobles envíos y protección ante datos locales incompatibles.
 - Inventario de equipos y sectores.
+- Reglas de integridad para impedir que equipos o tareas con historial cambien de identidad operativa.
 - Perfiles y permisos de demostración.
 - Informes por período y programa anual.
 - Exportación XLSX con registros, verificaciones y trazabilidad.

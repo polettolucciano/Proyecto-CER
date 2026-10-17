@@ -6,11 +6,12 @@ import { Dashboard } from './features/dashboard/Dashboard';
 import { OperationalRecordForm } from './features/records/OperationalRecordForm';
 import { RecordDetail } from './features/records/RecordDetail';
 import { ReportsPage } from './features/reports/ReportsPage';
+import { SettingsPage } from './features/settings/SettingsPage';
 import { EquipmentDetail, Notifications, SearchModal, TaskDetail } from './features/shell/AppDialogs';
 import { EquipmentForm, TaskForm, TrainingForm, UserForm } from './forms';
 import { MobileNavigation, Sidebar, Topbar } from './layout/AppChrome';
 import { navigation } from './navigation';
-import { EquipmentPage, Planning, Records, SettingsPage, TrainingPage, UsersPage, type Actions } from './pages';
+import { EquipmentPage, Planning, Records, TrainingPage, UsersPage, type Actions } from './pages';
 import { useApp } from './store';
 import type { Equipment, MaintenanceRecord, ModuleId, Page, Task, TeamUser, Training } from './types';
 

@@ -19,4 +19,9 @@ describe('migración del espacio de trabajo', () => {
   it('rechaza una estructura incompleta', () => {
     expect(normalizeWorkspace({ records: [] })).toBeUndefined();
   });
+
+  it('rechaza datos sin un administrador activo para evitar una sesión inutilizable', () => {
+    const workspace = createSeed();
+    expect(normalizeWorkspace({ ...workspace, users: workspace.users.map(user => ({ ...user, active: false })) })).toBeUndefined();
+  });
 });

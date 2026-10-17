@@ -17,7 +17,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const queue = useRef(Promise.resolve());
   const latest = useRef(0);
   const dataRef = useRef<Workspace | null>(null);
-  useEffect(() => { let active = true; repository.load().then(async value => { const restored = normalizeWorkspace(value); const initial = restored ?? createSeed(); if (!restored) await repository.save(initial); if (active) { dataRef.current = initial; setData(initial); } }).catch(() => { if (active) { const initial = createSeed(); dataRef.current = initial; setStorageError('El navegador no permite guardar los datos. Esta sesión será temporal.'); setData(initial); } }); return () => { active = false; }; }, []);
+  useEffect(() => {
+    let active = true;
+    repository.load().then(async value => {
+      const restored = normalizeWorkspace(value);
+      if (value != null && !restored) {
+        if (active) {
+          const initial = createSeed();
+          dataRef.current = initial;
+          setStorageError('Los datos guardados no tienen un formato compatible. No fueron sobrescritos y esta sesión será temporal.');
+          setData(initial);
+        }
+        return;
+      }
+      const initial = restored ?? createSeed();
+      if (value == null) await repository.save(initial);
+      if (active) { dataRef.current = initial; setData(initial); }
+    }).catch(() => {
+      if (active) {
+        const initial = createSeed();
+        dataRef.current = initial;
+        setStorageError('El navegador no permite guardar los datos. Esta sesión será temporal.');
+        setData(initial);
+      }
+    });
+    return () => { active = false; };
+  }, []);
   function update(action: (workspace: Workspace) => Workspace) {
     const current = dataRef.current;
     if (!current) return Promise.resolve(false);
