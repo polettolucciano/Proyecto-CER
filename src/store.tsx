@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import type { Workspace, TeamUser } from './types';
 import { createSeed } from './data';
 import { repository } from './repository';
+import { normalizeWorkspace } from './workspace';
 
 interface Store { data: Workspace; user: TeamUser; userId: string; setUserId: (id: string) => void; update: (action: (data: Workspace) => Workspace) => void; toast: (message: string) => void; saving: boolean; storageError: string; }
 const Context = createContext<Store | null>(null);
@@ -15,7 +16,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const queue = useRef(Promise.resolve());
   const latest = useRef(0);
-  useEffect(() => { let active = true; repository.load().then(async value => { const initial = value?.version === 1 ? value : createSeed(); if (!value) await repository.save(initial); if (active) setData(initial); }).catch(() => { if (active) { setStorageError('El navegador no permite guardar los datos. Esta sesión será temporal.'); setData(createSeed()); } }); return () => { active = false; }; }, []);
+  useEffect(() => { let active = true; repository.load().then(async value => { const restored = normalizeWorkspace(value); const initial = restored ?? createSeed(); if (!restored) await repository.save(initial); if (active) setData(initial); }).catch(() => { if (active) { setStorageError('El navegador no permite guardar los datos. Esta sesión será temporal.'); setData(createSeed()); } }); return () => { active = false; }; }, []);
   useEffect(() => { if (!data) return; const revision = ++latest.current; setSaving(true); queue.current = queue.current.then(() => repository.save(data)).then(() => { if (revision === latest.current) { setSaving(false); setStorageError(''); } }).catch(() => { if (revision === latest.current) { setSaving(false); setStorageError('No se pudieron guardar los últimos cambios. Revisá el espacio disponible en el navegador.'); } }); }, [data]);
   function toast(text: string) { setMessage(text); clearTimeout(timer.current); timer.current = setTimeout(() => setMessage(''), 4500); }
   if (!data) return <div className="app-loading"><img src="/cer-logo.png" width={80} height={68} alt="CER" /><span className="spinner" /><p>Preparando tu espacio de trabajo…</p></div>;

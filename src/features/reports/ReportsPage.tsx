@@ -47,7 +47,7 @@ export function ReportsPage() {
   );
   const annual = useMemo(() => buildAnnualReport({ ...data, records: visible.records }, yearTasks, year), [data, visible.records, yearTasks, year]);
   const filteredRecords = useMemo(
-    () => visible.records.filter(record => record.date >= from && record.date <= to && (module === 'all' || record.module === module)),
+    () => visible.records.filter(record => record.status === 'active' && record.date >= from && record.date <= to && (module === 'all' || record.module === module)),
     [visible.records, from, to, module],
   );
   const currentMonth = currentReportYear() === year ? new Date().getMonth() : -1;

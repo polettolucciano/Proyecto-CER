@@ -4,9 +4,10 @@ import { modules } from './data';
 import { canManage, today, visibleData } from './domain';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { OperationalRecordForm } from './features/records/OperationalRecordForm';
+import { RecordDetail } from './features/records/RecordDetail';
 import { ReportsPage } from './features/reports/ReportsPage';
 import { EquipmentDetail, Notifications, SearchModal, TaskDetail } from './features/shell/AppDialogs';
-import { EquipmentForm, RecordDetail, TaskForm, TrainingForm, UserForm } from './forms';
+import { EquipmentForm, TaskForm, TrainingForm, UserForm } from './forms';
 import { MobileNavigation, Sidebar, Topbar } from './layout/AppChrome';
 import { navigation } from './navigation';
 import { EquipmentPage, Planning, Records, SettingsPage, TrainingPage, UsersPage, type Actions } from './pages';
@@ -14,7 +15,7 @@ import { useApp } from './store';
 import type { Equipment, MaintenanceRecord, ModuleId, Page, Task, TeamUser, Training } from './types';
 
 type Dialog =
-  | { type: 'record'; module?: ModuleId; task?: Task; equipmentId?: string }
+  | { type: 'record'; module?: ModuleId; task?: Task; equipmentId?: string; sourceRecord?: MaintenanceRecord }
   | { type: 'record-detail'; record: MaintenanceRecord }
   | { type: 'task'; task?: Task }
   | { type: 'task-detail'; task: Task }
@@ -110,8 +111,8 @@ export default function App() {
 
       <MobileNavigation currentPage={route.page} onMenu={() => setSidebar(true)} onNavigate={navigate} onNewRecord={() => actions.newRecord()} />
 
-      {dialog?.type === 'record' && <OperationalRecordForm initialModule={dialog.module} initialEquipment={dialog.equipmentId} task={dialog.task} onClose={closeDialog} />}
-      {dialog?.type === 'record-detail' && <RecordDetail record={dialog.record} onClose={closeDialog} />}
+      {dialog?.type === 'record' && <OperationalRecordForm initialModule={dialog.module} initialEquipment={dialog.equipmentId} task={dialog.task} sourceRecord={dialog.sourceRecord} onClose={closeDialog} />}
+      {dialog?.type === 'record-detail' && <RecordDetail record={dialog.record} onClose={closeDialog} onCorrect={() => setDialog({ type: 'record', sourceRecord: dialog.record })} />}
       {dialog?.type === 'task' && user.role !== 'Responsable técnico' && <TaskForm task={dialog.task} onClose={closeDialog} />}
       {dialog?.type === 'equipment' && canManage(user) && <EquipmentForm equipment={dialog.equipment} onClose={closeDialog} />}
       {dialog?.type === 'user' && canManage(user) && <UserForm member={dialog.user} onClose={closeDialog} />}

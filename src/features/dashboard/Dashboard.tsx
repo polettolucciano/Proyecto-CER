@@ -55,7 +55,7 @@ export function Dashboard({ actions }: { actions: Actions }) {
     const overdue = active.filter(task => task.due < date);
     const dueToday = active.filter(task => task.due === date);
     const upcoming = active.filter(task => task.due > date && daysBetween(date, task.due) <= data.settings.advanceDays);
-    const recent = visible.records.filter(record => record.date >= addDays(date, -30) && record.date <= date);
+    const recent = visible.records.filter(record => record.status === 'active' && record.date >= addDays(date, -30) && record.date <= date);
     return { active, overdue, dueToday, upcoming, recent };
   }, [visible.tasks, visible.records, data.settings.advanceDays, date]);
 
@@ -63,7 +63,7 @@ export function Dashboard({ actions }: { actions: Actions }) {
   const operational = visible.equipment.filter(item => item.status === 'Operativo').length;
   const definedModules = modules.filter(module => module.defined && visible.equipment.some(item => item.module === module.id));
   const undefinedModules = modules.filter(module => !module.defined && visible.equipment.some(item => item.module === module.id));
-  const recentRecords = [...visible.records].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 4);
+  const recentRecords = visible.records.filter(record => record.status === 'active').sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 4);
   const firstName = user.name.split(' ')[0];
 
   return (

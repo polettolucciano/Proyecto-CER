@@ -12,6 +12,7 @@ export function taskStatus(task: Task, advance = 7) { const days = daysBetween(t
 export function formatDate(value: string, opts?: Intl.DateTimeFormatOptions) { return parseDate(value).toLocaleDateString('es-AR', opts ?? { day: '2-digit', month: 'short', year: 'numeric' }); }
 export const uid = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
 export function initials(name: string) { return name.trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase(); }
+export function safeHttpsUrl(value: string) { try { const url = new URL(value); return url.protocol === 'https:' ? url.toString() : undefined; } catch { return undefined; } }
 export function allowed(user: TeamUser, module: ModuleId) { return user.active && (user.role === 'Administrador' || user.modules.includes(module)); }
 export const canManage = (user: TeamUser) => user.active && user.role === 'Administrador';
 export function visibleData(data: Workspace, user: TeamUser) { return { ...data, equipment: data.equipment.filter(x => allowed(user, x.module)), tasks: data.tasks.filter(x => allowed(user, x.module)), records: data.records.filter(x => allowed(user, x.module)) }; }

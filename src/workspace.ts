@@ -1,0 +1,40 @@
+import type { AuditAction, AuditEvent, MaintenanceRecord, Workspace } from './types';
+import { safeHttpsUrl, uid } from './domain';
+
+type LegacyWorkspace = Omit<Workspace, 'version' | 'auditEvents' | 'records'> & {
+  version?: number;
+  auditEvents?: AuditEvent[];
+  records?: Array<Partial<MaintenanceRecord> & Pick<MaintenanceRecord, 'id' | 'module' | 'equipmentId' | 'date' | 'createdAt' | 'userId' | 'result' | 'values' | 'notes' | 'photos'>>;
+};
+
+export function normalizeWorkspace(value: unknown): Workspace | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const candidate = value as LegacyWorkspace;
+  if (!Array.isArray(candidate.equipment) || !Array.isArray(candidate.users) || !Array.isArray(candidate.tasks) || !Array.isArray(candidate.records) || !Array.isArray(candidate.training) || !candidate.settings) return undefined;
+  return {
+    ...candidate,
+    version: 2,
+    records: candidate.records.map(record => ({
+      ...record,
+      status: record.status ?? 'active',
+      revision: record.revision ?? 1,
+    })) as MaintenanceRecord[],
+    auditEvents: Array.isArray(candidate.auditEvents) ? candidate.auditEvents : [],
+    training: candidate.training.map(material => ({ ...material, url: safeHttpsUrl(material.url) ?? '' })),
+  };
+}
+
+export function auditEvent(actorId: string, action: AuditAction, entityId: string, summary: string, relatedEntityId?: string): AuditEvent {
+  return {
+    id: uid('audit'),
+    occurredAt: new Date().toISOString(),
+    actorId,
+    action,
+    entityType: 'maintenance-record',
+    entityId,
+    summary,
+    relatedEntityId,
+  };
+}
+
+export const isCurrentRecord = (record: MaintenanceRecord) => record.status === 'active';

@@ -4,6 +4,8 @@ import { moduleById, modules } from '../../data';
 import { advanceTask, allowed, formatDate, today, uid } from '../../domain';
 import { useApp } from '../../store';
 import type { Attachment, Field as ControlField, MaintenanceRecord, Module, ModuleId, Task, Values } from '../../types';
+import { auditEvent } from '../../workspace';
+import { findPotentialDuplicates } from './recordIntegrity';
 
 const moduleMeta: Partial<Record<ModuleId, { form: string; title: string; cadence: string; guidance: string }>> = {
   generator: { form: 'F-GE-00', title: 'Mantenimiento preventivo del grupo electrógeno', cadence: 'Control mensual', guidance: 'Completar primero las verificaciones con el equipo parado y luego las mediciones tras más de 5 minutos de marcha.' },
@@ -72,19 +74,20 @@ function evidenceCategories(moduleId: ModuleId) {
   return [{ label: 'Evidencia fotográfica', category: 'Evidencia general' }];
 }
 
-export function OperationalRecordForm({ initialModule, initialEquipment, task, onClose }: { initialModule?: ModuleId; initialEquipment?: string; task?: Task; onClose: () => void }) {
+export function OperationalRecordForm({ initialModule, initialEquipment, task, sourceRecord, onClose }: { initialModule?: ModuleId; initialEquipment?: string; task?: Task; sourceRecord?: MaintenanceRecord; onClose: () => void }) {
   const { data, user, update, toast } = useApp();
   const available = modules.filter(module => allowed(user, module.id));
-  const [moduleId, setModuleId] = useState<ModuleId>(task?.module ?? initialModule ?? available[0]?.id ?? 'generator');
+  const [moduleId, setModuleId] = useState<ModuleId>(sourceRecord?.module ?? task?.module ?? initialModule ?? available[0]?.id ?? 'generator');
   const module = moduleById(moduleId);
   const meta = moduleMeta[moduleId] ?? { form: 'Registro de control', title: module.name, cadence: module.frequency, guidance: module.description };
-  const [equipmentId, setEquipmentId] = useState(task?.equipmentId ?? initialEquipment ?? data.equipment.find(item => item.module === moduleId)?.id ?? '');
-  const [taskId, setTaskId] = useState(task?.id ?? '');
-  const [date, setDate] = useState(today());
-  const [values, setValues] = useState<Values>({});
-  const [notes, setNotes] = useState('');
-  const [result, setResult] = useState<'Conforme' | 'Con observaciones'>('Conforme');
-  const [photos, setPhotos] = useState<Attachment[]>([]);
+  const [equipmentId, setEquipmentId] = useState(sourceRecord?.equipmentId ?? task?.equipmentId ?? initialEquipment ?? data.equipment.find(item => item.module === moduleId)?.id ?? '');
+  const [taskId, setTaskId] = useState(sourceRecord?.taskId ?? task?.id ?? '');
+  const [date, setDate] = useState(sourceRecord?.date ?? today());
+  const [values, setValues] = useState<Values>(sourceRecord?.values ?? {});
+  const [notes, setNotes] = useState(sourceRecord?.notes ?? '');
+  const [result, setResult] = useState<'Conforme' | 'Con observaciones'>(sourceRecord?.result === 'attention' ? 'Con observaciones' : 'Conforme');
+  const [photos, setPhotos] = useState<Attachment[]>(sourceRecord?.photos ?? []);
+  const [duplicateApproved, setDuplicateApproved] = useState(false);
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -93,6 +96,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, o
   const requiredFields = useMemo(() => module.sections.flatMap(section => section.fields).filter(field => !field.optional), [module]);
   const completedRequired = requiredFields.filter(field => values[field.id]?.trim()).length;
   const hasIssue = Object.values(values).includes('MAL') || result === 'Con observaciones';
+  const duplicates = findPotentialDuplicates(data.records, { module: moduleId, equipmentId, date, taskId: taskId || undefined, excludeRecordId: sourceRecord?.id });
 
   function changeModule(value: ModuleId) {
     setModuleId(value);
@@ -134,6 +138,14 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, o
       setError('Tu perfil no tiene acceso a este módulo.');
       return;
     }
+    if (duplicates.length > 0 && !duplicateApproved) {
+      setError('Confirmá que este control es independiente de los registros existentes para la misma fecha.');
+      return;
+    }
+    if (sourceRecord && sourceRecord.status !== 'active') {
+      setError('Este registro ya no es la versión vigente y no puede rectificarse nuevamente.');
+      return;
+    }
     setSubmitting(true);
     const record: MaintenanceRecord = {
       id: `CER-${new Date().getFullYear()}-${uid('').slice(1, 9).toUpperCase()}`,
@@ -147,9 +159,17 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, o
       values,
       notes: notes.trim(),
       photos,
+      status: 'active',
+      revision: sourceRecord ? sourceRecord.revision + 1 : 1,
+      supersedesId: sourceRecord?.id,
     };
-    update(workspace => ({ ...workspace, records: [record, ...workspace.records], tasks: workspace.tasks.map(item => item.id === taskId ? advanceTask(item, date) : item) }));
-    toast('Control registrado. El historial y la planificación se actualizaron.');
+    update(workspace => ({
+      ...workspace,
+      records: [record, ...workspace.records.map(item => item.id === sourceRecord?.id ? { ...item, status: 'superseded' as const, supersededById: record.id } : item)],
+      tasks: sourceRecord ? workspace.tasks : workspace.tasks.map(item => item.id === taskId ? advanceTask(item, date) : item),
+      auditEvents: [auditEvent(user.id, sourceRecord ? 'record.corrected' : 'record.created', record.id, sourceRecord ? `Rectificó el registro ${sourceRecord.id}` : 'Registró un nuevo control', sourceRecord?.id), ...workspace.auditEvents],
+    }));
+    toast(sourceRecord ? 'Rectificación guardada. La versión anterior quedó preservada.' : 'Control registrado. El historial y la planificación se actualizaron.');
     onClose();
   }
 
@@ -165,7 +185,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, o
     setPhotos(current => [...current, ...valid.map(file => ({ id: uid('photo'), name: file.name, type: file.type, data: file, category }))]);
   }
 
-  return <Modal title={meta.title} subtitle={`${meta.form} · ${meta.cadence}`} onClose={onClose} wide>
+  return <Modal title={sourceRecord ? `Rectificar · ${meta.title}` : meta.title} subtitle={`${meta.form} · ${meta.cadence}`} onClose={onClose} wide>
     <div className="operational-form-shell">
       <div className="operational-progress" aria-label={`Paso ${step + 1} de 3`}>{['Identificación', 'Verificaciones', 'Cierre y evidencia'].map((label, index) => <div className={step === index ? 'current' : step > index ? 'done' : ''} key={label}><span>{step > index ? <Icon name="Check" size={13} /> : index + 1}</span><strong>{label}</strong></div>)}</div>
       <form ref={formRef} noValidate onSubmit={submit}>
@@ -181,9 +201,10 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, o
           <div className="operational-workspace">
             {step === 0 && <>
               <div className="workspace-heading"><span>01</span><div><h3>Identificá el control</h3><p>La fecha, el equipo y la persona responsable quedarán asociados al registro.</p></div></div>
-              <div className="form-grid operational-grid"><Field label="Módulo" required><select value={moduleId} disabled={Boolean(task)} onChange={event => changeModule(event.target.value as ModuleId)}>{available.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field><Field label="Fecha del control" required><input type="date" required max={today()} value={date} onChange={event => setDate(event.target.value)} /></Field><Field label="Equipo o sector" required><select required value={equipmentId} disabled={Boolean(task)} onChange={event => { setEquipmentId(event.target.value); setTaskId(''); }}><option value="">Seleccionar equipo</option>{data.equipment.filter(item => item.module === moduleId).map(item => <option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}</select></Field><Field label="Tarea programada" hint="Si la vinculás, su próxima fecha se actualizará al guardar."><select value={taskId} onChange={event => setTaskId(event.target.value)}><option value="">Control fuera de programación</option>{data.tasks.filter(item => item.active && item.module === moduleId && item.equipmentId === equipmentId).map(item => <option key={item.id} value={item.id}>{item.title} · {formatDate(item.due)}</option>)}</select></Field></div>
+              <div className="form-grid operational-grid"><Field label="Módulo" required><select value={moduleId} disabled={Boolean(task || sourceRecord)} onChange={event => changeModule(event.target.value as ModuleId)}>{available.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field><Field label="Fecha del control" required><input type="date" required max={today()} disabled={Boolean(sourceRecord)} value={date} onChange={event => { setDate(event.target.value); setDuplicateApproved(false); }} /></Field><Field label="Equipo o sector" required><select required value={equipmentId} disabled={Boolean(task || sourceRecord)} onChange={event => { setEquipmentId(event.target.value); setTaskId(''); setDuplicateApproved(false); }}><option value="">Seleccionar equipo</option>{data.equipment.filter(item => item.module === moduleId).map(item => <option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}</select></Field><Field label="Tarea programada" hint={sourceRecord ? 'La rectificación conserva la vinculación original.' : 'Si la vinculás, su próxima fecha se actualizará al guardar.'}><select value={taskId} disabled={Boolean(sourceRecord)} onChange={event => { setTaskId(event.target.value); setDuplicateApproved(false); }}><option value="">Control fuera de programación</option>{data.tasks.filter(item => item.active && item.module === moduleId && item.equipmentId === equipmentId).map(item => <option key={item.id} value={item.id}>{item.title} · {formatDate(item.due)}</option>)}</select></Field></div>
               {equipment && <div className="equipment-identity"><div><Icon name="Wrench" size={18} /><span><small>Equipo seleccionado</small><strong>{equipment.name}</strong></span></div><dl><div><dt>Código</dt><dd>{equipment.code}</dd></div><div><dt>Modelo</dt><dd>{equipment.model || 'Pendiente'}</dd></div><div><dt>Número</dt><dd>{equipment.serial || 'Pendiente'}</dd></div><div><dt>Ubicación</dt><dd>{equipment.location}</dd></div></dl></div>}
-              <div className="responsible-card"><Avatar initials={user.initials} /><div><small>Realiza y firma digitalmente este registro</small><strong>{user.name}</strong><span>{user.role}</span></div><Icon name="ShieldCheck" /></div>
+              <div className="responsible-card"><Avatar initials={user.initials} /><div><small>Quedará identificado como responsable del registro</small><strong>{user.name}</strong><span>{user.role}</span></div><Icon name="ShieldCheck" /></div>
+              {sourceRecord && <div className="inline-notice soft"><Icon name="History" /><span>Estás creando la revisión {sourceRecord.revision + 1}. El registro original {sourceRecord.id} quedará preservado y marcado como rectificado.</span></div>}
               {!module.defined && <div className="inline-notice"><Icon name="CircleHelp" /><span>Este módulo conserva una ficha inicial. Su checklist definitivo todavía depende de la planilla específica de CER.</span></div>}
             </>}
 
@@ -196,6 +217,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, o
               <div className="workspace-heading"><span>03</span><div><h3>Cerrá y documentá el control</h3><p>Revisá el resultado, agregá observaciones y adjuntá evidencia cuando corresponda.</p></div></div>
               <div className="result-selector"><span><Icon name={hasIssue ? 'TriangleAlert' : 'CheckCircle2'} /><div><small>Resultado general</small><strong>{hasIssue ? 'Con observaciones' : 'Conforme'}</strong></div></span><select aria-label="Resultado general" value={Object.values(values).includes('MAL') ? 'Con observaciones' : result} disabled={Object.values(values).includes('MAL')} onChange={event => setResult(event.target.value as typeof result)}><option>Conforme</option><option>Con observaciones</option></select></div>
               <Field label="Observaciones" hint={hasIssue ? 'Obligatorio porque el control contiene una observación.' : 'Describí hallazgos, acciones realizadas o información para el próximo control.'}><textarea rows={4} placeholder="Escribí una observación clara para el equipo…" value={notes} onChange={event => setNotes(event.target.value)} /></Field>
+              {duplicates.length > 0 && <div className="duplicate-warning" role="alert"><Icon name="Copy" size={20} /><div><strong>Ya existe {duplicates.length === 1 ? 'un control' : `${duplicates.length} controles`} para este equipo y fecha</strong><span>{duplicates.map(item => item.id).join(' · ')}</span><label><input type="checkbox" checked={duplicateApproved} onChange={event => setDuplicateApproved(event.target.checked)} />Confirmo que este es un control independiente y deseo conservar ambos.</label></div></div>}
               <div className="evidence-section"><div><h3>Evidencia fotográfica</h3><p>Las fotos quedan asociadas a este control y pueden consultarse desde el historial.</p></div>{evidenceCategories(moduleId).map(item => <EvidenceUpload key={item.category} {...item} photos={photos} onAdd={addPhotos} onRemove={id => setPhotos(current => current.filter(photo => photo.id !== id))} />)}</div>
               <div className="ready-to-save"><Icon name="CheckCheck" size={20} /><div><strong>Registro listo para guardar</strong><span>{taskId ? 'Al confirmar, también se actualizará la próxima fecha de la tarea vinculada.' : 'Se incorporará al historial como un control fuera de programación.'}</span></div></div>
             </>}

@@ -58,7 +58,7 @@ export function Sidebar({ currentPage, location, overdue, open, user, onClose, o
             <span className="demo-card-icon"><Icon name="Monitor" size={18} /></span>
             <div><strong>Versión de demostración</strong><p>Los cambios se guardan solamente en este navegador.</p></div>
           </div>
-          <div className="sidebar-footer"><span className="live-dot" /><span>Sistema CER</span><small>v0.2</small></div>
+          <div className="sidebar-footer"><span className="live-dot" /><span>Sistema CER</span><small>v0.3</small></div>
         </div>
       </aside>
     </>

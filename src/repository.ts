@@ -2,7 +2,7 @@ import type { Workspace } from './types';
 
 // Sustituir esta implementación por un repositorio HTTP al conectar el backend.
 // IndexedDB conserva los datos y fotografías de esta vista previa en este navegador.
-export interface WorkspaceRepository { load(): Promise<Workspace | undefined>; save(data: Workspace): Promise<void>; }
+export interface WorkspaceRepository { load(): Promise<unknown>; save(data: Workspace): Promise<void>; }
 const openDB = () => new Promise<IDBDatabase>((resolve, reject) => {
   const request = indexedDB.open('cer-gestion-preview', 1);
   request.onupgradeneeded = () => { request.result.createObjectStore('workspace'); };

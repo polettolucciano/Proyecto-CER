@@ -87,7 +87,7 @@ function cellState(planned: number, recorded: number, overdue: number): AnnualCe
 
 function recordsForTask(records: MaintenanceRecord[], taskId: string, year: number, month: number) {
   const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
-  return records.filter(record => record.taskId === taskId && record.date.startsWith(prefix));
+  return records.filter(record => record.status === 'active' && record.taskId === taskId && record.date.startsWith(prefix));
 }
 
 export function buildAnnualReport(data: Workspace, tasks: Task[], year: number) {
@@ -125,7 +125,7 @@ export function buildAnnualReport(data: Workspace, tasks: Task[], year: number) 
     planned: cells.reduce((total, cell) => total + cell.planned, 0),
     recorded: cells.reduce((total, cell) => total + cell.recorded, 0),
     overdue: cells.reduce((total, cell) => total + cell.overdue, 0),
-    unlinkedRecords: data.records.filter(record => record.date.startsWith(String(year)) && !record.taskId).length,
+    unlinkedRecords: data.records.filter(record => record.status === 'active' && record.date.startsWith(String(year)) && !record.taskId).length,
   };
 
   return { groups, summary };
