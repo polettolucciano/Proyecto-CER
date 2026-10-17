@@ -97,6 +97,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
   const [submitting, setSubmitting] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const confirmationRef = useRef<HTMLDivElement>(null);
   const submitLock = useRef(false);
   const equipment = data.equipment.find(item => item.id === equipmentId);
   const requiredFields = useMemo(() => module.sections.flatMap(section => section.fields).filter(field => !field.optional), [module]);
@@ -111,6 +112,30 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
     window.addEventListener('beforeunload', protectDraft);
     return () => window.removeEventListener('beforeunload', protectDraft);
   }, [dirty]);
+
+  useEffect(() => {
+    if (!confirmClose) return;
+    const previous = document.activeElement as HTMLElement | null;
+    confirmationRef.current?.focus();
+    const trapConfirmation = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        setConfirmClose(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const buttons = Array.from(confirmationRef.current?.querySelectorAll<HTMLButtonElement>('button:not([disabled])') ?? []);
+      if (!buttons.length) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+      const next = event.shiftKey ? (current <= 0 ? buttons.length - 1 : current - 1) : (current >= buttons.length - 1 ? 0 : current + 1);
+      buttons[next].focus();
+    };
+    document.addEventListener('keydown', trapConfirmation, true);
+    return () => { document.removeEventListener('keydown', trapConfirmation, true); previous?.focus(); };
+  }, [confirmClose]);
 
   function requestClose() {
     if (dirty && !submitting) setConfirmClose(true);
@@ -252,7 +277,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
         </div>
         <footer className="modal-footer operational-footer"><button type="button" className="button secondary" onClick={() => { if (step > 0) { setStep(value => value - 1); setError(''); } else requestClose(); }}>{step > 0 ? 'Volver' : 'Cancelar'}</button><span>Paso {step + 1} de 3</span><button type="submit" className="button primary" disabled={submitting}>{step === 2 ? submitting ? 'Guardando…' : 'Guardar control' : 'Continuar'}<Icon name={step === 2 ? 'Check' : 'ArrowRight'} size={16} /></button></footer>
       </form>
-      {confirmClose && <div className="discard-confirmation" role="dialog" aria-modal="true" aria-labelledby="discard-title"><div><span className="discard-icon"><Icon name="TriangleAlert" /></span><h3 id="discard-title">¿Salir sin guardar?</h3><p>Los cambios realizados en este control se perderán.</p><div><button className="button secondary" type="button" onClick={() => setConfirmClose(false)}>Continuar completando</button><button className="button danger" type="button" onClick={onClose}>Descartar cambios</button></div></div></div>}
+      {confirmClose && <div ref={confirmationRef} className="discard-confirmation" role="dialog" aria-modal="true" aria-labelledby="discard-title" tabIndex={-1}><div><span className="discard-icon"><Icon name="TriangleAlert" /></span><h3 id="discard-title">¿Salir sin guardar?</h3><p>Los cambios realizados en este control se perderán.</p><div><button className="button secondary" type="button" onClick={() => setConfirmClose(false)}>Continuar completando</button><button className="button danger" type="button" onClick={onClose}>Descartar cambios</button></div></div></div>}
     </div>
   </Modal>;
 }
