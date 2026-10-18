@@ -1,4 +1,4 @@
-import type { Frequency, Task, Workspace, TeamUser, ModuleId } from './types';
+import type { Frequency, Task, Workspace, TeamUser, ModuleId, Page } from './types';
 
 export const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Cordoba', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 export const parseDate = (s: string) => new Date(`${s}T12:00:00`);
@@ -15,6 +15,12 @@ export function initials(name: string) { return name.trim().split(/\s+/).slice(0
 export function safeHttpsUrl(value: string) { try { const url = new URL(value); return url.protocol === 'https:' ? url.toString() : undefined; } catch { return undefined; } }
 export function allowed(user: TeamUser, module: ModuleId) { return user.active && (user.role === 'Administrador' || user.modules.includes(module)); }
 export const canManage = (user: TeamUser) => user.active && user.role === 'Administrador';
+export const canPlan = (user: TeamUser) => user.active && user.role !== 'Responsable técnico';
+export function canAccessPage(user: TeamUser, page: Page) {
+  if (page === 'public-training') return true;
+  if (!user.active) return false;
+  return page !== 'users' || canManage(user);
+}
 export function visibleData(data: Workspace, user: TeamUser) { return { ...data, equipment: data.equipment.filter(x => allowed(user, x.module)), tasks: data.tasks.filter(x => allowed(user, x.module)), records: data.records.filter(x => allowed(user, x.module)) }; }
 export const monthTitle = (date: Date) => date.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
 export function occurrences(task: Task, start: string, end: string): string[] { if (!task.active) return []; const dates: string[] = []; let date = task.due; for (let i = 0; i < 2000 && date <= end; i++) { if (date >= start) dates.push(date); if (task.frequency === 'Única') break; date = nextDate(date, task.frequency); } return dates; }

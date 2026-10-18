@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { addMonths, advanceTask, nextDate, safeHttpsUrl } from './domain';
-import type { Task } from './types';
+import { addMonths, advanceTask, canAccessPage, canManage, canPlan, nextDate, safeHttpsUrl } from './domain';
+import type { Task, TeamUser } from './types';
 
 const task: Task = { id: 'task-1', title: 'Control', module: 'generator', equipmentId: 'eq-1', assignedTo: 'user-1', frequency: 'Mensual', due: '2026-01-31', notes: '', active: true };
 
@@ -28,5 +28,28 @@ describe('enlaces externos', () => {
     expect(safeHttpsUrl('javascript:alert(1)')).toBeUndefined();
     expect(safeHttpsUrl('http://example.com')).toBeUndefined();
     expect(safeHttpsUrl('texto')).toBeUndefined();
+  });
+});
+
+describe('permisos de la vista previa', () => {
+  const administrator: TeamUser = { id: 'admin', name: 'Administración', email: 'admin@example.com', role: 'Administrador', modules: ['generator'], active: true, initials: 'AD' };
+  const supervisor: TeamUser = { ...administrator, id: 'supervisor', role: 'Supervisor' };
+  const technician: TeamUser = { ...administrator, id: 'technician', role: 'Responsable técnico' };
+
+  it('reserva la gestión de personas al perfil administrador', () => {
+    expect(canAccessPage(administrator, 'users')).toBe(true);
+    expect(canAccessPage(supervisor, 'users')).toBe(false);
+    expect(canAccessPage(technician, 'users')).toBe(false);
+  });
+
+  it('permite planificar a administración y supervisión, pero no al responsable técnico', () => {
+    expect(canPlan(administrator)).toBe(true);
+    expect(canPlan(supervisor)).toBe(true);
+    expect(canPlan(technician)).toBe(false);
+    expect(canManage(supervisor)).toBe(false);
+  });
+
+  it('mantiene la biblioteca pública disponible sin depender del perfil', () => {
+    expect(canAccessPage({ ...technician, active: false }, 'public-training')).toBe(true);
   });
 });

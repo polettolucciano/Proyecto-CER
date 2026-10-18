@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Icon } from './components';
 import { modules } from './data';
-import { canManage, today, visibleData } from './domain';
+import { allowed, canAccessPage, canManage, canPlan, today, visibleData } from './domain';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { OperationalRecordForm } from './features/records/OperationalRecordForm';
 import { RecordDetail } from './features/records/RecordDetail';
@@ -59,23 +59,28 @@ export default function App() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  useEffect(() => {
+    if (!canAccessPage(user, route.page)) window.location.hash = '#dashboard';
+  }, [route.page, user]);
+
   const navigate = (page: Page, module?: ModuleId) => {
-    const hash = `#${page}${module ? `?module=${module}` : ''}`;
-    if (window.location.hash === hash) setRoute({ page, module });
+    const destination = canAccessPage(user, page) ? page : 'dashboard';
+    const hash = `#${destination}${module && destination === page ? `?module=${module}` : ''}`;
+    if (window.location.hash === hash) setRoute({ page: destination, module: destination === page ? module : undefined });
     else window.location.hash = hash;
     setSidebar(false);
   };
 
   const actions: Actions = {
     navigate,
-    newRecord: (module, task, equipmentId) => setDialog({ type: 'record', module, task, equipmentId }),
-    viewRecord: record => setDialog({ type: 'record-detail', record }),
-    editTask: task => setDialog({ type: 'task', task }),
-    viewTask: task => setDialog({ type: 'task-detail', task }),
-    editEquipment: equipment => setDialog({ type: 'equipment', equipment }),
-    viewEquipment: equipment => setDialog({ type: 'equipment-detail', equipment }),
-    editUser: selectedUser => setDialog({ type: 'user', user: selectedUser }),
-    editTraining: material => setDialog({ type: 'training', material }),
+    newRecord: (module, task, equipmentId) => { if (!module || allowed(user, module)) setDialog({ type: 'record', module, task, equipmentId }); },
+    viewRecord: record => { if (allowed(user, record.module)) setDialog({ type: 'record-detail', record }); },
+    editTask: task => { if (canPlan(user)) setDialog({ type: 'task', task }); },
+    viewTask: task => { if (allowed(user, task.module)) setDialog({ type: 'task-detail', task }); },
+    editEquipment: equipment => { if (canManage(user)) setDialog({ type: 'equipment', equipment }); },
+    viewEquipment: equipment => { if (allowed(user, equipment.module)) setDialog({ type: 'equipment-detail', equipment }); },
+    editUser: selectedUser => { if (canManage(user)) setDialog({ type: 'user', user: selectedUser }); },
+    editTraining: material => { if (canManage(user)) setDialog({ type: 'training', material }); },
   };
 
   const closeDialog = () => setDialog(null);
@@ -90,35 +95,37 @@ export default function App() {
 
   if (route.page === 'public-training') return <PublicTrainingPage />;
 
+  const currentPage = canAccessPage(user, route.page) ? route.page : 'dashboard';
+
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Ir al contenido</a>
-      <Sidebar currentPage={route.page} location={data.settings.location} overdue={overdue} open={sidebar} user={user} onClose={() => setSidebar(false)} onNavigate={navigate} />
+      <Sidebar currentPage={currentPage} location={data.settings.location} overdue={overdue} open={sidebar} user={user} onClose={() => setSidebar(false)} onNavigate={navigate} />
       <div className="app-main">
-        <Topbar currentPage={route.page} overdue={overdue} profileOpen={profile} user={user} users={data.users} onMenu={() => setSidebar(true)} onNotifications={() => setDialog({ type: 'notifications' })} onProfileChange={changeProfile} onProfileToggle={() => setProfile(value => !value)} onSearch={() => setDialog({ type: 'search' })} />
+        <Topbar currentPage={currentPage} overdue={overdue} profileOpen={profile} user={user} users={data.users} onMenu={() => setSidebar(true)} onNotifications={() => setDialog({ type: 'notifications' })} onProfileChange={changeProfile} onProfileToggle={() => setProfile(value => !value)} onSearch={() => setDialog({ type: 'search' })} />
         <div className="preview-strip premium-preview" role="status">
           <span><Icon name="Monitor" size={14} /><strong>Demostración</strong><span className="preview-detail">Datos de ejemplo · Sin conexión a Supabase</span></span>
           <span className={storageError ? 'storage-warning' : ''}><i className={saving ? 'saving-dot' : 'saved-dot'} />{storageError ? 'Revisar almacenamiento' : saving ? 'Guardando…' : 'Guardado en este navegador'}</span>
         </div>
         {storageError && <div className="storage-error" role="alert"><Icon name="TriangleAlert" size={17} />{storageError}</div>}
         <main id="main-content" className="main-content" tabIndex={-1}>
-          {route.page === 'dashboard' && <Dashboard actions={actions} />}
-          {route.page === 'planning' && <Planning actions={actions} />}
-          {route.page === 'records' && <Records key={`${user.id}-${route.module ?? ''}`} actions={actions} initialModule={route.module} />}
-          {route.page === 'equipment' && <EquipmentPage actions={actions} />}
-          {route.page === 'reports' && <ReportsPage />}
-          {route.page === 'training' && <TrainingPage onEdit={actions.editTraining} />}
-          {route.page === 'users' && <UsersPage actions={actions} />}
-          {route.page === 'settings' && <SettingsPage />}
+          {currentPage === 'dashboard' && <Dashboard actions={actions} />}
+          {currentPage === 'planning' && <Planning actions={actions} />}
+          {currentPage === 'records' && <Records key={`${user.id}-${route.module ?? ''}`} actions={actions} initialModule={route.module} />}
+          {currentPage === 'equipment' && <EquipmentPage actions={actions} />}
+          {currentPage === 'reports' && <ReportsPage />}
+          {currentPage === 'training' && <TrainingPage onEdit={actions.editTraining} />}
+          {currentPage === 'users' && <UsersPage actions={actions} />}
+          {currentPage === 'settings' && <SettingsPage />}
         </main>
         <footer className="app-footer"><span>Centro de Enfermedades Renales</span><span>Prototipo frontend · Datos de demostración</span></footer>
       </div>
 
-      <MobileNavigation currentPage={route.page} onMenu={() => setSidebar(true)} onNavigate={navigate} onNewRecord={() => actions.newRecord()} />
+      <MobileNavigation currentPage={currentPage} onMenu={() => setSidebar(true)} onNavigate={navigate} onNewRecord={() => actions.newRecord()} />
 
       {dialog?.type === 'record' && <OperationalRecordForm initialModule={dialog.module} initialEquipment={dialog.equipmentId} task={dialog.task} sourceRecord={dialog.sourceRecord} onClose={closeDialog} />}
       {dialog?.type === 'record-detail' && <RecordDetail record={dialog.record} onClose={closeDialog} onCorrect={() => setDialog({ type: 'record', sourceRecord: dialog.record })} />}
-      {dialog?.type === 'task' && user.role !== 'Responsable técnico' && <TaskForm task={dialog.task} onClose={closeDialog} />}
+      {dialog?.type === 'task' && canPlan(user) && <TaskForm task={dialog.task} onClose={closeDialog} />}
       {dialog?.type === 'equipment' && canManage(user) && <EquipmentForm equipment={dialog.equipment} onClose={closeDialog} />}
       {dialog?.type === 'user' && canManage(user) && <UserForm member={dialog.user} onClose={closeDialog} />}
       {dialog?.type === 'training' && canManage(user) && <TrainingForm material={dialog.material} onClose={closeDialog} />}

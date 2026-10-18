@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Avatar, Icon } from '../components';
-import { canManage } from '../domain';
+import { canAccessPage } from '../domain';
 import { navigation, navigationGroups } from '../navigation';
 import type { Page, TeamUser } from '../types';
 
@@ -35,7 +35,7 @@ export function Sidebar({ currentPage, location, overdue, open, user, onClose, o
             <div className="nav-group" key={group}>
               <h2>{group}</h2>
               {navigation
-                .filter(item => item.group === group && (item.id !== 'users' || canManage(user)))
+                .filter(item => item.group === group && canAccessPage(user, item.id))
                 .map(item => (
                   <a
                     key={item.id}

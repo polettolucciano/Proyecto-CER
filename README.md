@@ -16,7 +16,7 @@ Funcionalidades disponibles:
 - Guardado confirmado antes de cerrar formularios, bloqueo de dobles envíos y protección ante datos locales incompatibles.
 - Inventario de equipos y sectores.
 - Reglas de integridad para impedir que equipos o tareas con historial cambien de identidad operativa.
-- Perfiles y permisos de demostración.
+- Perfiles y permisos de demostración con restricciones centralizadas por pantalla, módulo y acción.
 - Informes por período y programa anual.
 - Exportación XLSX con registros, verificaciones y trazabilidad.
 - Gestión de capacitaciones con borradores, publicación y una biblioteca pública separada del panel privado.
