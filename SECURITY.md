@@ -10,7 +10,7 @@ Los siguientes puntos bloquean un lanzamiento operativo hasta que exista backend
 
 ### SEC-001 — Autorización solamente visual
 
-- Ubicación: `src/domain.ts:16-18`, `src/store.tsx:12-24`.
+- Ubicación: `src/domain.ts`, `src/store.tsx`.
 - Evidencia: el perfil se selecciona en estado React y `allowed` filtra la interfaz.
 - Impacto: cualquier persona con acceso al navegador podría elegir otro perfil o modificar datos locales.
 - Corrección requerida: Supabase Auth y políticas RLS por rol y módulo; probar también accesos directos no autorizados.
@@ -18,7 +18,7 @@ Los siguientes puntos bloquean un lanzamiento operativo hasta que exista backend
 
 ### SEC-002 — Persistencia local sin respaldo ni aislamiento multiusuario
 
-- Ubicación: `src/repository.ts:3-14`.
+- Ubicación: `src/infrastructure/persistence/local/IndexedDbWorkspaceRepository.ts`.
 - Evidencia: registros y fotografías se guardan juntos en IndexedDB.
 - Impacto: pérdida por limpieza del navegador, acceso desde el mismo perfil del dispositivo y ausencia de recuperación central.
 - Corrección requerida: PostgreSQL y Storage con RLS, copias de seguridad, restauración probada y política de conservación.
@@ -28,7 +28,7 @@ Los siguientes puntos bloquean un lanzamiento operativo hasta que exista backend
 
 ### SEC-003 — Evidencias validadas solamente en cliente
 
-- Ubicación: `src/features/records/OperationalRecordForm.tsx:176-180`.
+- Ubicación: `src/features/records/domain/recordValidation.ts` y `src/features/records/OperationalRecordForm.tsx`.
 - Evidencia: el frontend limita MIME y tamaño, pero no existe servidor que vuelva a validarlos.
 - Impacto: la futura carga remota sería evadible si se confiara solamente en esta validación.
 - Corrección requerida: validar tamaño, tipo real, extensión y autorización en Storage/servidor; generar nombres no controlados por el usuario.

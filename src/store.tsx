@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Workspace, TeamUser } from './types';
 import { createSeed } from './data';
-import { repository } from './repository';
+import { workspaceRepository } from './infrastructure/persistence';
+import type { WorkspaceRepository } from './infrastructure/persistence';
 import { normalizeWorkspace } from './workspace';
 
 interface Store { data: Workspace; user: TeamUser; userId: string; setUserId: (id: string) => void; update: (action: (data: Workspace) => Workspace) => Promise<boolean>; toast: (message: string) => void; saving: boolean; storageError: string; }
 const Context = createContext<Store | null>(null);
 export const useApp = () => useContext(Context)!;
-export function AppProvider({ children }: { children: ReactNode }) {
+export function AppProvider({ children, repository = workspaceRepository }: { children: ReactNode; repository?: WorkspaceRepository }) {
   const [data, setData] = useState<Workspace | null>(null);
   const [userId, setUserId] = useState('user-admin');
   const [message, setMessage] = useState('');

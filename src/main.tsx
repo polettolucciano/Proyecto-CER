@@ -2,6 +2,7 @@ import ReactDOM from 'react-dom/client';
 import { AppErrorBoundary } from './features/shell/AppErrorBoundary';
 import { AppProvider } from './store';
 import App from './App';
+import './styles/tokens.css';
 import './styles.css';
 import './readability.css';
 import './premium.css';

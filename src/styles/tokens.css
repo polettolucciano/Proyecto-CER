@@ -1,0 +1,18 @@
+:root {
+  --navy: #173b77;
+  --navy-deep: #102d5b;
+  --navy-ink: #17263a;
+  --teal: #168d88;
+  --teal-soft: #e6f3f1;
+  --text: #203047;
+  --muted: #64748b;
+  --border: #dfe6ec;
+  --bg: #f3f6f8;
+  --surface: #ffffff;
+  --danger: #b94d54;
+  --warning: #a56d13;
+  --sidebar-width: 264px;
+  --shadow: 0 12px 35px rgba(28, 48, 72, 0.07);
+  font-size: 16px;
+}
+

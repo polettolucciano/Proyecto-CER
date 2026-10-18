@@ -1,23 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Avatar, Field, Icon, Modal, ModuleIcon, Photo } from '../../components';
 import { moduleById, modules } from '../../data';
-import { advanceTask, allowed, formatDate, today, uid } from '../../domain';
+import { allowed, formatDate, today, uid } from '../../domain';
+import { controlOptions, evidenceCategories, recordModuleMeta } from '../../modules/recordModules';
 import { useApp } from '../../store';
 import type { Attachment, Field as ControlField, MaintenanceRecord, Module, ModuleId, Task, Values } from '../../types';
-import { auditEvent } from '../../workspace';
+import { createMaintenanceRecord, registerRecordInWorkspace } from './application/registerRecord';
+import { findMissingRequiredField, selectValidEvidence, validateClosure, validateIdentification } from './domain/recordValidation';
 import { findPotentialDuplicates } from './recordIntegrity';
-
-const moduleMeta: Partial<Record<ModuleId, { form: string; title: string; cadence: string; guidance: string }>> = {
-  generator: { form: 'F-GE-00', title: 'Mantenimiento preventivo del grupo electrógeno', cadence: 'Control mensual', guidance: 'Completar primero las verificaciones con el equipo parado y luego las mediciones tras más de 5 minutos de marcha.' },
-  osmosis: { form: 'Control diario', title: 'Ósmosis inversa', cadence: 'Registro diario', guidance: 'Los controles periódicos se completan solamente cuando correspondan a la fecha seleccionada.' },
-  loop: { form: 'Rotación de bombas', title: 'Rotación de bombas del loop', cadence: 'Planilla quincenal', guidance: 'Registrar el estado final de cada bomba. La periodicidad exacta por actividad sigue pendiente de confirmación con CER.' },
-};
-
-function controlOptions(field: ControlField, moduleId: ModuleId) {
-  if (field.type === 'check') return field.optional ? ['OK', 'MAL', 'No aplica'] : ['OK', 'MAL'];
-  if (field.type === 'switch') return moduleId === 'loop' ? ['START', 'STOP'] : ['ON', 'OFF'];
-  return ['Sí', 'No', 'No aplica'];
-}
 
 function NumberControl({ field, value, onChange }: { field: ControlField; value: string; onChange: (value: string) => void }) {
   function adjust(amount: number) {
@@ -64,16 +54,6 @@ function EvidenceUpload({ label, category, photos, onAdd, onRemove }: { label: s
   return <div className="evidence-slot"><div className="evidence-slot-heading"><span><Icon name="Camera" size={18} /></span><div><strong>{label}</strong><small>JPG, PNG o WebP · máximo 5 MB</small></div><label className="button secondary small">Agregar<input type="file" aria-label={`Agregar ${label.toLowerCase()}`} accept="image/jpeg,image/png,image/webp" multiple onChange={event => { onAdd(event.target.files, category); event.target.value = ''; }} /></label></div>{selected.length > 0 && <div className="evidence-thumbnails">{selected.map(photo => <div key={photo.id}><Photo attachment={photo} /><button type="button" aria-label={`Quitar ${photo.name}`} onClick={() => onRemove(photo.id)}><Icon name="X" size={13} /></button></div>)}</div>}</div>;
 }
 
-function evidenceCategories(moduleId: ModuleId) {
-  if (moduleId === 'loop') return [
-    { label: 'Bombas de planta baja', category: 'Bombas planta baja' },
-    { label: 'Bombas del lazo', category: 'Bombas lazo' },
-    { label: 'Otra evidencia', category: 'Otra evidencia' },
-  ];
-  if (moduleId === 'osmosis') return [{ label: 'Foto del control de ósmosis', category: 'Control de ósmosis' }];
-  return [{ label: 'Evidencia fotográfica', category: 'Evidencia general' }];
-}
-
 export function OperationalRecordForm({ initialModule, initialEquipment, task, sourceRecord, onClose }: { initialModule?: ModuleId; initialEquipment?: string; task?: Task; sourceRecord?: MaintenanceRecord; onClose: () => void }) {
   const { data, user, update, toast } = useApp();
   const available = modules.filter(module => allowed(user, module.id));
@@ -83,7 +63,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
   const initialDate = sourceRecord?.date ?? today();
   const [moduleId, setModuleId] = useState<ModuleId>(initialModuleId);
   const module = moduleById(moduleId);
-  const meta = moduleMeta[moduleId] ?? { form: 'Registro de control', title: module.name, cadence: module.frequency, guidance: module.description };
+  const meta = recordModuleMeta[moduleId] ?? { form: 'Registro de control', title: module.name, cadence: module.frequency, guidance: module.description };
   const [equipmentId, setEquipmentId] = useState(initialEquipmentId);
   const [taskId, setTaskId] = useState(initialTaskId);
   const [date, setDate] = useState(initialDate);
@@ -152,12 +132,13 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
   }
 
   function next() {
-    if (step === 0 && (!equipmentId || !date || date > today())) {
-      setError('Seleccioná un equipo y una fecha válida, hasta hoy.');
+    const identificationError = validateIdentification(equipmentId, date, today());
+    if (step === 0 && identificationError) {
+      setError(identificationError);
       return;
     }
     if (step === 1) {
-      const missing = requiredFields.find(field => !values[field.id]?.trim());
+      const missing = findMissingRequiredField(module, values);
       if (missing) {
         setError(`Falta completar “${missing.label}”.`);
         document.getElementById(`control-${missing.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -174,8 +155,9 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
     event.preventDefault();
     if (step < 2) { next(); return; }
     if (submitting || submitLock.current) return;
-    if (hasIssue && !notes.trim()) {
-      setError('Describí la observación para que el responsable pueda revisarla.');
+    const closureError = validateClosure(hasIssue, notes);
+    if (closureError) {
+      setError(closureError);
       return;
     }
     if (!allowed(user, moduleId)) {
@@ -192,28 +174,8 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
     }
     submitLock.current = true;
     setSubmitting(true);
-    const record: MaintenanceRecord = {
-      id: `CER-${new Date().getFullYear()}-${uid('').slice(1, 9).toUpperCase()}`,
-      module: moduleId,
-      equipmentId,
-      taskId: taskId || undefined,
-      date,
-      createdAt: new Date().toISOString(),
-      userId: user.id,
-      result: hasIssue ? 'attention' : 'ok',
-      values,
-      notes: notes.trim(),
-      photos,
-      status: 'active',
-      revision: sourceRecord ? sourceRecord.revision + 1 : 1,
-      supersedesId: sourceRecord?.id,
-    };
-    const saved = await update(workspace => ({
-      ...workspace,
-      records: [record, ...workspace.records.map(item => item.id === sourceRecord?.id ? { ...item, status: 'superseded' as const, supersededById: record.id } : item)],
-      tasks: sourceRecord ? workspace.tasks : workspace.tasks.map(item => item.id === taskId ? advanceTask(item, date) : item),
-      auditEvents: [auditEvent(user.id, sourceRecord ? 'record.corrected' : 'record.created', record.id, sourceRecord ? `Rectificó el registro ${sourceRecord.id}` : 'Registró un nuevo control', sourceRecord?.id), ...workspace.auditEvents],
-    }));
+    const record = createMaintenanceRecord({ module: moduleId, equipmentId, taskId: taskId || undefined, date, userId: user.id, hasIssue, values, notes, photos }, sourceRecord);
+    const saved = await update(workspace => registerRecordInWorkspace(workspace, record, sourceRecord));
     if (!saved) {
       submitLock.current = false;
       setSubmitting(false);
@@ -227,13 +189,13 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
   function addPhotos(files: FileList | null, category: string) {
     if (!files) return;
     const incoming = Array.from(files);
-    const valid = incoming.filter(file => ['image/jpeg', 'image/png', 'image/webp'].includes(file.type) && file.size <= 5 * 1024 * 1024);
-    if (valid.length !== incoming.length) setError('Usá imágenes JPG, PNG o WebP de hasta 5 MB cada una.');
-    if (valid.length + photos.length > 6) {
+    const { accepted, rejected, exceedsLimit } = selectValidEvidence(incoming, photos);
+    if (rejected) setError('Usá imágenes JPG, PNG o WebP de hasta 5 MB cada una.');
+    if (exceedsLimit) {
       setError('Podés adjuntar hasta 6 fotografías por control.');
       return;
     }
-    setPhotos(current => [...current, ...valid.map(file => ({ id: uid('photo'), name: file.name, type: file.type, data: file, category }))]);
+    setPhotos(current => [...current, ...accepted.map(file => ({ id: uid('photo'), name: file.name, type: file.type, data: file, category }))]);
   }
 
   return <Modal title={sourceRecord ? `Rectificar · ${meta.title}` : meta.title} subtitle={`${meta.form} · ${meta.cadence}`} onClose={requestClose} wide>

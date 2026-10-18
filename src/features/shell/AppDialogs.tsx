@@ -3,11 +3,12 @@ import { Avatar, Badge, Empty, Icon, Modal, ModuleIcon } from '../../components'
 import { moduleById } from '../../data';
 import { canManage, formatDate, taskStatus, today, visibleData } from '../../domain';
 import { navigation } from '../../navigation';
-import { RecordsTable, type Actions } from '../../pages';
+import type { AppActions } from '../../app/actions';
+import { RecordsTable } from '../records/RecordsTable';
 import { useApp } from '../../store';
 import type { Equipment, MaintenanceRecord, Task } from '../../types';
 
-export function TaskDetail({ task, actions, onClose }: { task: Task; actions: Actions; onClose: () => void }) {
+export function TaskDetail({ task, actions, onClose }: { task: Task; actions: AppActions; onClose: () => void }) {
   const { data, user } = useApp();
   const equipment = data.equipment.find(item => item.id === task.equipmentId);
   const owner = data.users.find(item => item.id === task.assignedTo);
@@ -34,7 +35,7 @@ export function TaskDetail({ task, actions, onClose }: { task: Task; actions: Ac
   );
 }
 
-export function EquipmentDetail({ equipment, actions, onClose }: { equipment: Equipment; actions: Actions; onClose: () => void }) {
+export function EquipmentDetail({ equipment, actions, onClose }: { equipment: Equipment; actions: AppActions; onClose: () => void }) {
   const { data, user } = useApp();
   const records = data.records.filter(item => item.equipmentId === equipment.id).sort((a, b) => b.date.localeCompare(a.date));
   const tasks = data.tasks.filter(item => item.active && item.equipmentId === equipment.id);
@@ -66,7 +67,7 @@ export function EquipmentDetail({ equipment, actions, onClose }: { equipment: Eq
   );
 }
 
-export function SearchModal({ actions, onClose }: { actions: Actions; onClose: () => void }) {
+export function SearchModal({ actions, onClose }: { actions: AppActions; onClose: () => void }) {
   const { data, user } = useApp();
   const visible = visibleData(data, user);
   const [query, setQuery] = useState('');
@@ -97,7 +98,7 @@ export function SearchModal({ actions, onClose }: { actions: Actions; onClose: (
   );
 }
 
-export function Notifications({ actions, onClose }: { actions: Actions; onClose: () => void }) {
+export function Notifications({ actions, onClose }: { actions: AppActions; onClose: () => void }) {
   const { data, user } = useApp();
   const tasks = visibleData(data, user).tasks.filter(task => task.active && task.due <= today()).sort((a, b) => a.due.localeCompare(b.due));
   return (

@@ -38,6 +38,14 @@ npm test
 npm run build
 ```
 
+## Arquitectura
+
+La aplicación está organizada por funcionalidades. Las pantallas dependen de reglas y contratos, mientras que IndexedDB queda aislado como adaptador de infraestructura. Los datos de demostración y las definiciones operativas están separados.
+
+- [Arquitectura y convenciones](docs/ARCHITECTURE.md)
+- [Plan de integración futura con Supabase](docs/SUPABASE_PLAN.md)
+- [Estado y riesgos de seguridad](SECURITY.md)
+
 ## Próxima etapa de infraestructura
 
 La conexión futura con Supabase deberá incorporar Auth, PostgreSQL, Storage para evidencias, RLS por rol y módulo, auditoría, migraciones versionadas, pruebas de autorización y estrategia de copias de seguridad. No deben utilizarse datos operativos reales hasta completar y verificar esa etapa.

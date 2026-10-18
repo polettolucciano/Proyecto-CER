@@ -1,19 +1,26 @@
 import { useEffect, useState } from 'react';
+import type { AppActions } from './app/actions';
 import { Icon } from './components';
 import { modules } from './data';
 import { allowed, canAccessPage, canManage, canPlan, today, visibleData } from './domain';
 import { Dashboard } from './features/dashboard/Dashboard';
+import { EquipmentForm } from './features/equipment/EquipmentForm';
+import { EquipmentPage } from './features/equipment/EquipmentPage';
+import { TaskForm } from './features/planning/TaskForm';
+import { PlanningPage } from './features/planning/PlanningPage';
 import { OperationalRecordForm } from './features/records/OperationalRecordForm';
 import { RecordDetail } from './features/records/RecordDetail';
+import { RecordsPage } from './features/records/RecordsPage';
 import { ReportsPage } from './features/reports/ReportsPage';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { PublicTrainingPage } from './features/training/PublicTrainingPage';
+import { TrainingForm } from './features/training/TrainingForm';
 import { TrainingPage } from './features/training/TrainingPage';
+import { UserForm } from './features/users/UserForm';
+import { UsersPage } from './features/users/UsersPage';
 import { EquipmentDetail, Notifications, SearchModal, TaskDetail } from './features/shell/AppDialogs';
-import { EquipmentForm, TaskForm, TrainingForm, UserForm } from './forms';
 import { MobileNavigation, Sidebar, Topbar } from './layout/AppChrome';
 import { navigation } from './navigation';
-import { EquipmentPage, Planning, Records, UsersPage, type Actions } from './pages';
 import { useApp } from './store';
 import type { Equipment, MaintenanceRecord, ModuleId, Page, Task, TeamUser, Training } from './types';
 
@@ -71,7 +78,7 @@ export default function App() {
     setSidebar(false);
   };
 
-  const actions: Actions = {
+  const actions: AppActions = {
     navigate,
     newRecord: (module, task, equipmentId) => { if (!module || allowed(user, module)) setDialog({ type: 'record', module, task, equipmentId }); },
     viewRecord: record => { if (allowed(user, record.module)) setDialog({ type: 'record-detail', record }); },
@@ -110,8 +117,8 @@ export default function App() {
         {storageError && <div className="storage-error" role="alert"><Icon name="TriangleAlert" size={17} />{storageError}</div>}
         <main id="main-content" className="main-content" tabIndex={-1}>
           {currentPage === 'dashboard' && <Dashboard actions={actions} />}
-          {currentPage === 'planning' && <Planning actions={actions} />}
-          {currentPage === 'records' && <Records key={`${user.id}-${route.module ?? ''}`} actions={actions} initialModule={route.module} />}
+          {currentPage === 'planning' && <PlanningPage actions={actions} />}
+          {currentPage === 'records' && <RecordsPage key={`${user.id}-${route.module ?? ''}`} actions={actions} initialModule={route.module} />}
           {currentPage === 'equipment' && <EquipmentPage actions={actions} />}
           {currentPage === 'reports' && <ReportsPage />}
           {currentPage === 'training' && <TrainingPage onEdit={actions.editTraining} />}

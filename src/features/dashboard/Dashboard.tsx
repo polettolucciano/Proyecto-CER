@@ -4,9 +4,11 @@ import { modules, moduleById } from '../../data';
 import { addDays, daysBetween, formatDate, taskStatus, today, visibleData } from '../../domain';
 import { useApp } from '../../store';
 import type { Task } from '../../types';
-import { RecordsTable, type Actions, useExport } from '../../pages';
+import type { AppActions } from '../../app/actions';
+import { RecordsTable } from '../records/RecordsTable';
+import { useExportRecords } from '../reports/useExportRecords';
 
-function TaskRow({ task, actions }: { task: Task; actions: Actions }) {
+function TaskRow({ task, actions }: { task: Task; actions: AppActions }) {
   const { data } = useApp();
   const owner = data.users.find(item => item.id === task.assignedTo);
   const equipment = data.equipment.find(item => item.id === task.equipmentId);
@@ -28,7 +30,7 @@ function TaskRow({ task, actions }: { task: Task; actions: Actions }) {
   );
 }
 
-function QueueSection({ title, caption, tasks, actions, tone }: { title: string; caption: string; tasks: Task[]; actions: Actions; tone: 'critical' | 'today' | 'next' }) {
+function QueueSection({ title, caption, tasks, actions, tone }: { title: string; caption: string; tasks: Task[]; actions: AppActions; tone: 'critical' | 'today' | 'next' }) {
   return (
     <section className={`queue-section ${tone}`}>
       <header>
@@ -44,11 +46,11 @@ function QuickAction({ icon, title, caption, onClick }: { icon: string; title: s
   return <button className="quick-action" onClick={onClick}><span><Icon name={icon} size={20} /></span><div><strong>{title}</strong><small>{caption}</small></div><Icon name="ArrowUpRight" size={17} /></button>;
 }
 
-export function Dashboard({ actions }: { actions: Actions }) {
+export function Dashboard({ actions }: { actions: AppActions }) {
   const { data, user } = useApp();
   const visible = visibleData(data, user);
   const date = today();
-  const { busy, download } = useExport();
+  const { busy, download } = useExportRecords();
 
   const summary = useMemo(() => {
     const active = visible.tasks.filter(task => task.active).sort((a, b) => a.due.localeCompare(b.due));
