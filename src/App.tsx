@@ -7,11 +7,13 @@ import { OperationalRecordForm } from './features/records/OperationalRecordForm'
 import { RecordDetail } from './features/records/RecordDetail';
 import { ReportsPage } from './features/reports/ReportsPage';
 import { SettingsPage } from './features/settings/SettingsPage';
+import { PublicTrainingPage } from './features/training/PublicTrainingPage';
+import { TrainingPage } from './features/training/TrainingPage';
 import { EquipmentDetail, Notifications, SearchModal, TaskDetail } from './features/shell/AppDialogs';
 import { EquipmentForm, TaskForm, TrainingForm, UserForm } from './forms';
 import { MobileNavigation, Sidebar, Topbar } from './layout/AppChrome';
 import { navigation } from './navigation';
-import { EquipmentPage, Planning, Records, TrainingPage, UsersPage, type Actions } from './pages';
+import { EquipmentPage, Planning, Records, UsersPage, type Actions } from './pages';
 import { useApp } from './store';
 import type { Equipment, MaintenanceRecord, ModuleId, Page, Task, TeamUser, Training } from './types';
 
@@ -29,7 +31,7 @@ type Dialog =
 
 function readRoute(): { page: Page; module?: ModuleId } {
   const [path, query] = window.location.hash.replace('#', '').split('?');
-  const page = navigation.some(item => item.id === path) ? path as Page : 'dashboard';
+  const page = path === 'public-training' || navigation.some(item => item.id === path) ? path as Page : 'dashboard';
   const module = new URLSearchParams(query).get('module');
   return { page, module: modules.some(item => item.id === module) ? module as ModuleId : undefined };
 }
@@ -86,6 +88,8 @@ export default function App() {
     navigate('dashboard');
   }
 
+  if (route.page === 'public-training') return <PublicTrainingPage />;
+
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Ir al contenido</a>
@@ -103,7 +107,7 @@ export default function App() {
           {route.page === 'records' && <Records key={`${user.id}-${route.module ?? ''}`} actions={actions} initialModule={route.module} />}
           {route.page === 'equipment' && <EquipmentPage actions={actions} />}
           {route.page === 'reports' && <ReportsPage />}
-          {route.page === 'training' && <TrainingPage actions={actions} />}
+          {route.page === 'training' && <TrainingPage onEdit={actions.editTraining} />}
           {route.page === 'users' && <UsersPage actions={actions} />}
           {route.page === 'settings' && <SettingsPage />}
         </main>

@@ -19,7 +19,7 @@ Funcionalidades disponibles:
 - Perfiles y permisos de demostración.
 - Informes por período y programa anual.
 - Exportación XLSX con registros, verificaciones y trazabilidad.
-- Biblioteca inicial de capacitaciones.
+- Gestión de capacitaciones con borradores, publicación y una biblioteca pública separada del panel privado.
 
 Los módulos Carro de paro, Fumigación, Electricidad, Salas y Otros mantenimientos conservan una ficha inicial hasta recibir y validar sus planillas específicas con CER.
 

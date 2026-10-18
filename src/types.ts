@@ -1,5 +1,5 @@
 export type ModuleId = 'generator' | 'osmosis' | 'loop' | 'crash' | 'fumigation' | 'electrical' | 'rooms' | 'general';
-export type Page = 'dashboard' | 'planning' | 'records' | 'equipment' | 'training' | 'reports' | 'users' | 'settings';
+export type Page = 'dashboard' | 'planning' | 'records' | 'equipment' | 'training' | 'public-training' | 'reports' | 'users' | 'settings';
 export type Frequency = 'Diaria' | 'Semanal' | 'Quincenal' | 'Mensual' | 'Bimestral' | 'Trimestral' | 'Semestral' | 'Anual' | 'Única';
 export type Role = 'Administrador' | 'Supervisor' | 'Responsable técnico';
 export type Result = 'ok' | 'attention';
