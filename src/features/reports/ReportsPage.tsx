@@ -11,16 +11,15 @@ type View = 'annual' | 'records';
 
 const stateText = {
   empty: 'Sin programación',
-  planned: 'Planificado',
-  recorded: 'Registrado',
-  overdue: 'Vencido',
-  mixed: 'Registro parcial',
+  pending: 'Pendiente',
+  compliant: 'Realizado conforme',
+  alert: 'No realizado o con falla',
 };
 
 function CellMark({ cell, task }: { cell: AnnualCell; task: string }) {
   const detail = cell.state === 'empty'
     ? 'Sin actividad'
-    : `${stateText[cell.state]}. ${cell.recorded} registrados de ${cell.planned} previstos${cell.overdue ? `; ${cell.overdue} vencidos` : ''}.`;
+    : `${stateText[cell.state]}. ${cell.recorded} registrados de ${cell.planned} previstos${cell.attention ? `; ${cell.attention} con falla u observación` : ''}${cell.overdue ? `; ${cell.overdue} no realizados en término` : ''}.`;
   return (
     <span className={`program-mark ${cell.state}`} title={`${task}: ${detail}`} aria-label={`${task}: ${detail}`}>
       {cell.state === 'empty' ? <span aria-hidden="true">—</span> : <><strong>{cell.recorded || cell.planned}</strong><small>{cell.recorded ? `/${cell.planned}` : 'prev.'}</small></>}
@@ -106,11 +105,11 @@ export function ReportsPage() {
           <ReportMetric icon="ClipboardCheck" label="tareas activas" value={annual.summary.tasks} tone="navy" />
           <ReportMetric icon="CalendarDays" label="controles previstos" value={annual.summary.planned} tone="blue" />
           <ReportMetric icon="CheckCircle2" label="registros vinculados" value={annual.summary.recorded} tone="green" />
-          <ReportMetric icon="TriangleAlert" label="instancias vencidas" value={annual.summary.overdue} tone="amber" />
+          <ReportMetric icon="TriangleAlert" label="vencidas o con falla" value={annual.summary.overdue + annual.summary.attention} tone="amber" />
         </div>
 
         <div className="program-legend" aria-label="Referencias del informe">
-          <span><i className="recorded" />Registrado</span><span><i className="planned" />Planificado</span><span><i className="mixed" />Parcial</span><span><i className="overdue" />Vencido</span>
+          <span><i className="compliant" />Verde: realizado y conforme</span><span><i className="pending" />Negro: pendiente</span><span><i className="alert" />Rojo: no realizado o con falla</span>
           <small>Los números indican realizados / previstos.</small>
         </div>
 
@@ -133,7 +132,7 @@ export function ReportsPage() {
 
       <div className="report-guidance-grid">
         <section className="panel report-guidance"><div className="guidance-icon"><Icon name="FileSpreadsheet" /></div><div><h3>Fiel al informe original, más fácil de leer</h3><p>Conservamos categorías, responsable, frecuencia y meses. Cada celda se calcula desde la planificación y los registros vinculados; no se cargan cumplimientos ficticios.</p></div></section>
-        <section className="panel report-question"><div><Icon name="CircleHelp" /><h3>Una definición pendiente con CER</h3></div><p>La planilla recibida usa cruces verdes, rojas, negras y celdas amarillas, pero no explica su significado. Esta versión propone estados operativos claros; antes del formato final debemos validar esa convención con el cliente.</p></section>
+        <section className="panel report-question"><div><Icon name="CheckCircle2" /><h3>Convención confirmada por CER</h3></div><p>Negro identifica lo pendiente, verde lo realizado correctamente y rojo lo no realizado o registrado con una falla u observación.</p></section>
       </div>
       {annual.summary.unlinkedRecords > 0 && <div className="report-data-note" role="note"><Icon name="CircleHelp" size={18} /><div><strong>{annual.summary.unlinkedRecords} registros de demostración no están vinculados a una tarea programada.</strong><span>Siguen disponibles en el historial, pero no se cuentan como cumplimiento mensual para evitar atribuciones incorrectas.</span></div></div>}
     </> : <>

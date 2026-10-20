@@ -8,7 +8,7 @@ import { useApp } from '../../store';
 const roleDescriptions = [
   ['Administrador', 'Control de perfiles, activos y configuración.', 'ShieldCheck'],
   ['Supervisor', 'Consulta, planificación y registro de controles.', 'Users'],
-  ['Responsable técnico', 'Registro y consulta de sus módulos asignados.', 'Wrench'],
+  ['Enfermería', 'Realización y consulta de mantenimientos en sus módulos asignados.', 'Wrench'],
 ] as const;
 
 export function UsersPage({ actions }: { actions: AppActions }) {

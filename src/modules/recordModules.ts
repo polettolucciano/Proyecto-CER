@@ -16,15 +16,15 @@ export const recordModuleMeta: Partial<Record<ModuleId, RecordModuleMeta>> = {
   },
   osmosis: {
     form: 'Control diario',
-    title: 'Ósmosis inversa',
+    title: 'Ósmosis inversa y mixer',
     cadence: 'Registro diario',
-    guidance: 'Los controles periódicos se completan solamente cuando correspondan a la fecha seleccionada.',
+    guidance: 'Completá el control diario y, cuando corresponda al turno, los datos del mixer y las verificaciones periódicas.',
   },
   loop: {
     form: 'Rotación de bombas',
     title: 'Rotación de bombas del loop',
     cadence: 'Planilla quincenal',
-    guidance: 'Registrar el estado final de cada bomba. La periodicidad exacta por actividad sigue pendiente de confirmación con CER.',
+    guidance: 'Registrar los ensayos de desinfección realizados y el estado final de cada bomba de planta baja, pretratamiento y loop.',
   },
 };
 

@@ -107,7 +107,7 @@ export function Dashboard({ actions }: { actions: AppActions }) {
             <header><h2>Accesos rápidos</h2><p>Las tareas más utilizadas del sistema.</p></header>
             <div className="quick-actions">
               <QuickAction icon="ClipboardCheck" title="Registrar un control" caption="Elegir módulo y equipo" onClick={() => actions.newRecord()} />
-              {user.role !== 'Responsable técnico' && <QuickAction icon="CalendarDays" title="Programar mantenimiento" caption="Crear una tarea recurrente" onClick={() => actions.editTask()} />}
+              {user.role !== 'Enfermería' && <QuickAction icon="CalendarDays" title="Programar mantenimiento" caption="Crear una tarea recurrente" onClick={() => actions.editTask()} />}
               <QuickAction icon="Wrench" title="Buscar un equipo" caption="Abrir ficha e historial" onClick={() => actions.navigate('equipment')} />
               <QuickAction icon="FileSpreadsheet" title="Preparar un reporte" caption="Filtrar y exportar registros" onClick={() => actions.navigate('reports')} />
             </div>

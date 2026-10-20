@@ -17,8 +17,8 @@ export function createDemoWorkspace(): Workspace {
   const all = modules.map(module => module.id);
   const users: Workspace['users'] = [
     { id: 'user-admin', name: 'Administración CER', email: 'administracion@example.com', role: 'Administrador', modules: all, active: true, initials: 'AC' },
-    { id: 'user-tech', name: 'Técnico de mantenimiento', email: 'tecnico@example.com', role: 'Responsable técnico', modules: ['generator', 'loop', 'electrical', 'rooms', 'general', 'fumigation', 'crash'], active: true, initials: 'TM' },
-    { id: 'user-water', name: 'Responsable de ósmosis', email: 'osmosis@example.com', role: 'Responsable técnico', modules: ['osmosis', 'loop'], active: true, initials: 'RO' },
+    { id: 'user-tech', name: 'Enfermería de mantenimiento', email: 'mantenimiento@example.com', role: 'Enfermería', modules: ['generator', 'loop', 'electrical', 'rooms', 'general', 'fumigation', 'crash'], active: true, initials: 'EM' },
+    { id: 'user-water', name: 'Enfermería de tratamiento de agua', email: 'osmosis@example.com', role: 'Enfermería', modules: ['osmosis', 'loop'], active: true, initials: 'EA' },
     { id: 'user-super', name: 'Supervisión CER', email: 'supervision@example.com', role: 'Supervisor', modules: all, active: true, initials: 'SC' },
   ];
   const taskRows: [string, ModuleId, string, Task['frequency'], number][] = [

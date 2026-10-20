@@ -28,7 +28,7 @@ export function TaskDetail({ task, actions, onClose }: { task: Task; actions: Ap
         <div className="inline-notice soft"><Icon name="RefreshCw" /><span>Al registrar este control, la próxima fecha se actualizará según la periodicidad configurada.</span></div>
       </div>
       <footer className="modal-footer">
-        {user.role !== 'Responsable técnico' ? <button className="button secondary" onClick={() => actions.editTask(task)}><Icon name="Pencil" size={16} />Editar tarea</button> : <button className="button secondary" onClick={onClose}>Cerrar</button>}
+        {user.role !== 'Enfermería' ? <button className="button secondary" onClick={() => actions.editTask(task)}><Icon name="Pencil" size={16} />Editar tarea</button> : <button className="button secondary" onClick={onClose}>Cerrar</button>}
         <button className="button primary" onClick={() => actions.newRecord(task.module, task)}><Icon name="ClipboardCheck" size={16} />Registrar control</button>
       </footer>
     </Modal>

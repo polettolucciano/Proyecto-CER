@@ -34,7 +34,7 @@ describe('enlaces externos', () => {
 describe('permisos de la vista previa', () => {
   const administrator: TeamUser = { id: 'admin', name: 'Administración', email: 'admin@example.com', role: 'Administrador', modules: ['generator'], active: true, initials: 'AD' };
   const supervisor: TeamUser = { ...administrator, id: 'supervisor', role: 'Supervisor' };
-  const technician: TeamUser = { ...administrator, id: 'technician', role: 'Responsable técnico' };
+  const technician: TeamUser = { ...administrator, id: 'technician', role: 'Enfermería' };
 
   it('reserva la gestión de personas al perfil administrador', () => {
     expect(canAccessPage(administrator, 'users')).toBe(true);

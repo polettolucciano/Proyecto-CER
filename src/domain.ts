@@ -15,7 +15,7 @@ export function initials(name: string) { return name.trim().split(/\s+/).slice(0
 export function safeHttpsUrl(value: string) { try { const url = new URL(value); return url.protocol === 'https:' ? url.toString() : undefined; } catch { return undefined; } }
 export function allowed(user: TeamUser, module: ModuleId) { return user.active && (user.role === 'Administrador' || user.modules.includes(module)); }
 export const canManage = (user: TeamUser) => user.active && user.role === 'Administrador';
-export const canPlan = (user: TeamUser) => user.active && user.role !== 'Responsable técnico';
+export const canPlan = (user: TeamUser) => user.active && user.role !== 'Enfermería';
 export function canAccessPage(user: TeamUser, page: Page) {
   if (page === 'public-training') return true;
   if (!user.active) return false;

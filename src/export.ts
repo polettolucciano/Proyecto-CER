@@ -27,8 +27,8 @@ export async function exportAnnualProgram(tasks: Task[], data: Workspace, year: 
   const navy = 'FF173B72';
   const category = 'FFDCE9F4';
   const border = 'FFB8C4D1';
-  const fills = { recorded: 'FFDDF4E9', planned: 'FFE7EFFA', overdue: 'FFFFE4E2', mixed: 'FFFFF0D2' } as const;
-  const fonts = { recorded: 'FF227454', planned: 'FF356797', overdue: 'FFB14843', mixed: 'FFA76F18' } as const;
+  const fills = { compliant: 'FFDDF4E9', pending: 'FFF2F3F4', alert: 'FFFFE4E2' } as const;
+  const fonts = { compliant: 'FF227454', pending: 'FF161B22', alert: 'FFB14843' } as const;
 
   sheet.columns = [
     { key: 'control', width: 38 }, { key: 'equipment', width: 34 }, { key: 'responsible', width: 23 }, { key: 'frequency', width: 14 },
@@ -77,7 +77,7 @@ export async function exportAnnualProgram(tasks: Task[], data: Workspace, year: 
           excelCell.value = 'X';
           excelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fills[cell.state] } };
           excelCell.font = { bold: true, color: { argb: fonts[cell.state] } };
-          excelCell.note = `${cell.recorded} registrados de ${cell.planned} previstos${cell.overdue ? ` · ${cell.overdue} vencidos` : ''}`;
+          excelCell.note = `${cell.recorded} registrados de ${cell.planned} previstos${cell.attention ? ` · ${cell.attention} con falla u observación` : ''}${cell.overdue ? ` · ${cell.overdue} no realizados en término` : ''}`;
         }
         excelCell.alignment = { horizontal: 'center', vertical: 'middle' };
       });
@@ -89,9 +89,9 @@ export async function exportAnnualProgram(tasks: Task[], data: Workspace, year: 
   const legendStart = rowNumber + 1;
   sheet.getCell(legendStart, 1).value = `AÑO: ${year}`;
   sheet.getCell(legendStart, 1).font = { bold: true, color: { argb: navy } };
-  sheet.getCell(legendStart + 1, 1).value = `Resumen: ${summary.tasks} tareas · ${summary.planned} controles previstos · ${summary.recorded} registros vinculados · ${summary.overdue} instancias vencidas`;
+  sheet.getCell(legendStart + 1, 1).value = `Resumen: ${summary.tasks} tareas · ${summary.planned} controles previstos · ${summary.recorded} registros vinculados · ${summary.overdue} no realizados en término · ${summary.attention} con falla u observación`;
   sheet.mergeCells(legendStart + 1, 1, legendStart + 1, 16);
-  sheet.getCell(legendStart + 2, 1).value = 'REFERENCIAS PROPUESTAS: verde = registrado · azul = planificado · amarillo = parcial · rojo = vencido. Validar convención final con CER.';
+  sheet.getCell(legendStart + 2, 1).value = 'REFERENCIAS CER: verde = realizado correctamente · negro = pendiente · rojo = no realizado o con falla.';
   sheet.mergeCells(legendStart + 2, 1, legendStart + 2, 16);
   sheet.getCell(legendStart + 2, 1).font = { italic: true, color: { argb: 'FF7A5C20' } };
 

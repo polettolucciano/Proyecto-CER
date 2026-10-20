@@ -7,6 +7,8 @@ type LegacyWorkspace = Omit<Workspace, 'version' | 'auditEvents' | 'records'> & 
   records?: Array<Partial<MaintenanceRecord> & Pick<MaintenanceRecord, 'id' | 'module' | 'equipmentId' | 'date' | 'createdAt' | 'userId' | 'result' | 'values' | 'notes' | 'photos'>>;
 };
 
+const normalizeRole = (role: string) => role === 'Responsable técnico' ? 'Enfermería' : role;
+
 export function normalizeWorkspace(value: unknown): Workspace | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const candidate = value as LegacyWorkspace;
@@ -17,6 +19,7 @@ export function normalizeWorkspace(value: unknown): Workspace | undefined {
   return {
     ...candidate,
     version: 2,
+    users: candidate.users.map(user => ({ ...user, role: normalizeRole(user.role) })) as Workspace['users'],
     records: candidate.records.map(record => ({
       ...record,
       status: record.status ?? 'active',

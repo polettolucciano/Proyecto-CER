@@ -51,7 +51,7 @@ Todas las tablas expuestas tendrán RLS y grants mínimos. Las políticas se esc
 - Evidencias: bucket privado y rutas no controladas directamente por nombres de archivo del usuario.
 - `service_role`: exclusivamente en infraestructura confiable; nunca en el navegador.
 
-Los roles actuales —Administrador, Supervisor y Responsable técnico— son una propuesta demostrativa y no se convertirán en políticas definitivas hasta validarlos con CER.
+Los roles Administrador y Supervisor continúan como una propuesta demostrativa. CER confirmó que los usuarios operativos son integrantes de Enfermería que realizan los mantenimientos; las operaciones exactas de cada perfil todavía deben validarse antes de convertirlas en políticas definitivas.
 
 ## Migraciones previstas
 

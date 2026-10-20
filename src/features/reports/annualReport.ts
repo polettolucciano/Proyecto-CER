@@ -4,11 +4,13 @@ import type { MaintenanceRecord, Task, TeamUser, Workspace } from '../../types';
 
 export const reportMonths = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'] as const;
 
-export type AnnualCellState = 'empty' | 'planned' | 'recorded' | 'overdue' | 'mixed';
+export type AnnualCellState = 'empty' | 'pending' | 'compliant' | 'alert';
 
 export interface AnnualCell {
   planned: number;
   recorded: number;
+  compliant: number;
+  attention: number;
   overdue: number;
   state: AnnualCellState;
 }
@@ -30,6 +32,7 @@ export interface AnnualSummary {
   tasks: number;
   planned: number;
   recorded: number;
+  attention: number;
   overdue: number;
   unlinkedRecords: number;
 }
@@ -76,13 +79,11 @@ export function annualOccurrences(task: Task, year: number) {
   return dates;
 }
 
-function cellState(planned: number, recorded: number, overdue: number): AnnualCellState {
+function cellState(planned: number, recorded: number, attention: number, overdue: number): AnnualCellState {
   if (!planned && !recorded) return 'empty';
-  if (recorded > 0 && overdue > 0) return 'mixed';
-  if (overdue > 0) return 'overdue';
-  if (recorded >= planned && planned > 0) return 'recorded';
-  if (recorded > 0) return 'recorded';
-  return 'planned';
+  if (attention > 0 || overdue > 0) return 'alert';
+  if (recorded > 0) return 'compliant';
+  return 'pending';
 }
 
 function recordsForTask(records: MaintenanceRecord[], taskId: string, year: number, month: number) {
@@ -97,14 +98,19 @@ export function buildAnnualReport(data: Workspace, tasks: Task[], year: number) 
     const occurrences = annualOccurrences(task, year);
     const months = reportMonths.map((_, month) => {
       const plannedDates = occurrences.filter(date => parseDate(date).getMonth() === month);
-      const recorded = recordsForTask(data.records, task.id, year, month).length;
+      const records = recordsForTask(data.records, task.id, year, month);
+      const recorded = records.length;
+      const attention = records.filter(record => record.result === 'attention').length;
+      const compliant = recorded - attention;
       const elapsed = plannedDates.filter(date => date < currentDate).length;
       const overdue = Math.max(elapsed - recorded, 0);
       return {
         planned: plannedDates.length,
         recorded,
+        compliant,
+        attention,
         overdue,
-        state: cellState(plannedDates.length, recorded, overdue),
+        state: cellState(plannedDates.length, recorded, attention, overdue),
       };
     });
     return {
@@ -124,6 +130,7 @@ export function buildAnnualReport(data: Workspace, tasks: Task[], year: number) 
     tasks: rows.length,
     planned: cells.reduce((total, cell) => total + cell.planned, 0),
     recorded: cells.reduce((total, cell) => total + cell.recorded, 0),
+    attention: cells.reduce((total, cell) => total + cell.attention, 0),
     overdue: cells.reduce((total, cell) => total + cell.overdue, 0),
     unlinkedRecords: data.records.filter(record => record.status === 'active' && record.date.startsWith(String(year)) && !record.taskId).length,
   };
