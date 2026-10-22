@@ -1,14 +1,288 @@
-/* Escala de lectura para una aplicación de uso cotidiano, también en móvil. */
-:root{--muted:#748399}
-.nav-item{font-size:12px}.nav-group h2{font-size:9px}.brand small{font-size:10px}.workspace-switch strong{font-size:12px}.workspace-switch small{font-size:8px}.care-card>strong{font-size:12px}.care-card p{font-size:11px}.care-card button{font-size:10px}.sidebar-footer{font-size:8px}.sidebar-footer small{font-size:8px}
-.breadcrumb,.breadcrumb strong{font-size:11px}.global-search{font-size:11px}.profile-trigger strong{font-size:11px}.profile-trigger small{font-size:9px}.preview-strip{font-size:10px}.preview-strip .preview-detail{font-size:10px}.page-heading p{font-size:12px;color:#748499}.page-heading .eyebrow{font-size:9px}.page-heading .button{font-size:11px}.overview-label{font-size:11px}.overview-date{font-size:10px}.page-actions{flex-wrap:wrap}
-.stat-top{font-size:12px;color:#667890}.stat-caption{font-size:10px;color:#7c8ca2}.stat-card>strong{margin-top:14px}.panel-heading h2{font-size:15px}.panel-heading p{font-size:11px;color:#8191a7}.panel-heading .text-button{font-size:11px}.count-pill{font-size:10px}.agenda-tabs>span.active{font-size:11px}.agenda-note{font-size:10px;color:#8290a5}.agenda-row{padding-top:17px;padding-bottom:17px}.agenda-text strong{font-size:12px;color:#425875}.agenda-text>span{font-size:10px;color:#8090a6}.agenda-date small{font-size:10px;color:#8795a9}.badge{font-size:10px;padding:4px 8px}.badge.green{color:#397c68}.badge.amber{color:#997126}.badge.red{color:#ad6158}.badge.blue{color:#4f78a8}.panel-bottom{font-size:10px;color:#8192a8}.donut-label>span{font-size:11px;color:#8090a5}.donut-legend>div{font-size:11px}.donut-legend>div>span{color:#788aa2}.health-link{font-size:11px}
-.section-heading h2{font-size:15px}.section-heading p{font-size:11px;color:#7b8da5}.subtle-label{font-size:10px}.module-card h3{font-size:13px}.module-card p{font-size:11px;color:#7c8da4;min-height:38px}.module-card-footer{font-size:9px;color:#8394a9;flex-wrap:wrap;gap:6px}.module-card-footer>span:last-child{font-size:8px}.table-link strong{font-size:12px}.table-link small{font-size:10px;color:#8b9ab0}.data-table{font-size:12px}.data-table th{font-size:10px;color:#7b8ca4}.data-table td{font-size:12px;color:#6b7e98}.user-cell{font-size:11px}.task-table td:nth-child(4){font-size:11px}.data-table{min-width:680px}.frequency-pill{font-size:10px}.text-button{font-size:11px}
-.filter-bar select,.search-field input{font-size:12px}.filter-bar select{min-height:39px}.date-filters{font-size:10px}.date-filters input{font-size:11px;min-width:135px}.date-filters>.text-button{font-size:10px}.record-summary>div{font-size:11px}.pagination{font-size:11px}.view-tabs button{font-size:11px}.planning-summary{font-size:11px}.planning-summary>.muted{font-size:10px}.calendar-nav strong{font-size:12px}.weekday{font-size:11px}.day-number{font-size:11px}.calendar-event{font-size:9px}.annual-table{min-width:1000px}.annual-table th{font-size:10px}.annual-task strong{font-size:11px}.annual-task small{font-size:10px}.annual-legend{font-size:10px}
-.equipment-card h3{font-size:15px}.equipment-card-top>.badge{font-size:9px}.asset-code{font-size:10px}.location{font-size:11px;color:#7d90aa;line-height:1.6;min-height:36px}.equipment-meta span{font-size:10px;color:#8999af}.equipment-meta strong{font-size:11px}.equipment-bottom{font-size:10px}.list-caption{font-size:11px}.list-caption>span{font-size:10px}.role-card h3{font-size:14px}.role-card p{font-size:11px;color:#7f92ac}.role-card>span{font-size:11px}.user-cell>span>strong{font-size:12px}.user-cell>span>small{font-size:10px}.role-pill{font-size:10px}
-.training-banner p{font-size:13px}.training-banner-meta{font-size:11px}.pill-tabs button{font-size:11px}.training-labels>small{font-size:10px}.training-card h3{font-size:16px}.training-card p{font-size:12px;color:#8195ae}.training-cover>span{font-size:10px}.page-footnote{font-size:11px}.bar-chart-row>div:first-child{font-size:12px}.export-panel p{font-size:12px}.export-includes{font-size:11px}.export-panel>small{font-size:10px}.report-period{font-size:11px}.field>span{font-size:12px;color:#5e7593}.field input,.field select,.field textarea{font-size:13px}.field small{font-size:11px;color:#8295af}.settings-body>.muted{font-size:12px}.connection-state{font-size:12px}.connection-list{font-size:12px}.notification-settings p{font-size:12px}.notification-settings strong{font-size:13px}.coming-badge{font-size:10px}
-.modal-header p{font-size:12px;color:#7e91ab}.form-steps>div{font-size:11px}.form-intro p{font-size:12px}.responsible-note small{font-size:11px}.responsible-note strong{font-size:12px}.control-field label{font-size:13px;color:#637c9a}.control-field small{font-size:11px;color:#879bb3}.control-section p{font-size:11px;color:#889ab3}.control-section h3{font-size:14px}.segmented button{font-size:11px;min-width:64px}.inline-notice{font-size:12px}.detail-metadata span{font-size:11px}.detail-metadata strong{font-size:12px}.detail-row{font-size:12px}.detail-section h3{font-size:13px}.detail-task strong{font-size:12px}.detail-task small{font-size:11px}.form-subtitle,.checkbox-line{font-size:12px}.upload-area strong{font-size:12px}.upload-area span{font-size:10px}.notification-list strong{font-size:12px}.notification-list small{font-size:11px}.app-footer{font-size:10px}
-@media(max-width:1250px){.stat-top{font-size:10px}.stat-caption{font-size:9px}.agenda-text strong{font-size:11px}.agenda-text>span{font-size:9px}.agenda-note{font-size:8px}.badge{font-size:9px}.agenda-date small{font-size:9px}.panel-heading h2{font-size:13px}.panel-heading p{font-size:10px}.panel-heading .text-button{font-size:10px}.module-card h3{font-size:12px}.module-card p{font-size:10px}.equipment-card h3{font-size:13px}.equipment-meta strong{font-size:10px}.equipment-bottom{font-size:9px}.role-card h3{font-size:12px}.table-link strong{font-size:11px}.data-table td{font-size:11px}.user-cell{font-size:10px}.page-heading p{font-size:11px}.page-heading .button{font-size:10px}}
-@media(max-width:1050px){.main-content{padding-left:23px;padding-right:23px}.stat-top{font-size:9px}.stat-caption{font-size:8px}.agenda-text strong{font-size:10px}.agenda-text>span{font-size:8px}.panel-heading h2{font-size:12px}.panel-heading p{font-size:9px}.panel-heading .text-button{font-size:9px}.agenda-tabs>span.active{font-size:10px}.donut-legend>div{font-size:10px}.health-link{font-size:10px}.panel-bottom{font-size:9px}.module-card h3{font-size:13px}.module-card p{font-size:11px}.preview-strip{font-size:9px}.preview-strip .preview-detail{font-size:9px}}
-@media(max-width:880px){.sidebar{visibility:hidden}.sidebar.open{visibility:visible}.stat-top{font-size:11px}.stat-caption{font-size:9px}.agenda-text strong{font-size:12px}.agenda-text>span{font-size:10px}.panel-heading h2{font-size:14px}.panel-heading p{font-size:10px}.module-card h3{font-size:11px}.module-card p{font-size:10px}.module-card-footer{font-size:8px}.module-card-footer>span:last-child{font-size:7px}.equipment-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.equipment-card h3{font-size:15px}.equipment-meta strong{font-size:12px}.equipment-bottom{font-size:10px}}
-@media(max-width:680px){.main-content{padding-left:18px;padding-right:18px}.preview-strip{font-size:9px}.stat-top{font-size:11px}.stat-caption{font-size:8.5px;line-height:1.6}.stat-icon{width:27px;height:27px}.stat-card{padding:16px 14px 13px}.page-heading .button{font-size:11px}.page-heading p{font-size:12px}.page-heading .eyebrow{font-size:9px}.overview-label{font-size:10px}.overview-date{font-size:9px}.panel-heading h2{font-size:14px}.panel-heading p{font-size:10px}.panel-heading .text-button{font-size:10px}.agenda-row{gap:9px;padding:17px 14px}.agenda-text strong{font-size:11px}.agenda-text>span{font-size:9px;line-height:1.6}.agenda-date{min-width:66px}.badge{font-size:8px}.agenda-date small{font-size:9px}.agenda-note{font-size:8px}.panel-bottom{font-size:9px}.donut-label>span{font-size:9px}.donut-legend>div{font-size:10px}.health-link{font-size:11px}.section-heading h2{font-size:14px}.section-heading p{font-size:10px}.module-card h3{font-size:12px}.module-card p{font-size:11px;min-height:53px}.module-card-footer{font-size:8px;line-height:1.6;gap:7px}.module-card-footer>span:last-child{font-size:7px}.filter-bar select,.search-field input{font-size:12px}.search-field input{min-height:40px}.record-summary>div{font-size:10px}.date-filters input{font-size:10px;min-width:0;width:125px}.pagination{font-size:10px}.view-tabs button{font-size:10px}.planning-summary{font-size:10px;gap:14px}.equipment-card h3{font-size:13px;min-height:40px}.equipment-meta span{font-size:10px}.equipment-meta strong{font-size:11px}.equipment-bottom>span:last-child{font-size:10px}.location{font-size:10px;min-height:43px}.equipment-card-top>.badge{font-size:8px}.asset-code{font-size:9px}.role-card h3{font-size:12px}.role-card p{font-size:10px}.role-card>span{font-size:9px}.training-banner p{font-size:12px}.training-banner h2{font-size:25px}.training-banner-meta{font-size:10px}.pill-tabs button{font-size:10px;padding:10px 9px}.training-toolbar .search-field input{font-size:14px}.field input,.field select,.field textarea{font-size:16px}.form-steps>div{font-size:8px}.control-field label{font-size:12px}.control-field small{font-size:11px}.control-section p{font-size:11px}.control-section h3{font-size:13px}.segmented button{font-size:12px;min-width:0}.form-intro p{font-size:11px}.inline-notice{font-size:11px}.detail-metadata span{font-size:10px}.detail-metadata strong{font-size:11px}.detail-row{font-size:11px}.modal-header p{font-size:11px}.upload-area span{font-size:9px}.modal-footer>.muted{font-size:9px}.notification-list strong{font-size:11px}.notification-list small{font-size:10px}.app-footer{font-size:8px;line-height:1.7}.preview-strip>span{gap:6px}.connection-list{font-size:11px}.notification-settings p{font-size:11px}.notification-settings strong{font-size:12px}.page-footnote{font-size:10px}}
+/*
+ * CER — capa final de legibilidad.
+ * Se carga después del sistema visual para impedir que un breakpoint reduzca
+ * información operativa a tamaños propios de una miniatura.
+ */
+:root {
+  font-size: 16px;
+  --muted: #60748e;
+}
+
+html,
+body {
+  overflow-x: clip;
+}
+
+body {
+  font-size: 1rem;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.app-shell,
+.app-main {
+  min-width: 0;
+  overflow-x: clip;
+}
+
+button,
+a,
+input,
+select,
+textarea { touch-action: manipulation; }
+
+/* Navegación y contexto permanente */
+.premium-sidebar .nav-item { font-size: .875rem; }
+.premium-sidebar .nav-group h2 { font-size: .6875rem; }
+.premium-workspace strong { font-size: .8125rem; }
+.premium-workspace small { font-size: .6875rem; line-height: 1.45; }
+.demo-card strong { font-size: .8125rem; }
+.demo-card p { font-size: .75rem; }
+.premium-sidebar .sidebar-footer,
+.premium-sidebar .sidebar-footer small { font-size: .6875rem; }
+.topbar-title small { font-size: .75rem; }
+.topbar-title strong { font-size: 1rem; }
+.premium-topbar .global-search { font-size: .8125rem; }
+.premium-topbar .profile-trigger strong { font-size: .8125rem; }
+.premium-topbar .profile-trigger small { font-size: .6875rem; }
+.premium-preview,
+.premium-preview .preview-detail { font-size: .75rem; }
+.app-footer { font-size: .75rem; }
+
+/* Jerarquía general, filtros y tablas */
+.page-heading p { font-size: .9375rem; color: #5f728a; }
+.page-heading .eyebrow { font-size: .75rem; }
+.page-heading .button,
+.button { font-size: .875rem; }
+.text-button { font-size: .8125rem; }
+.badge { font-size: .75rem; }
+.panel-heading h2,
+.section-heading h2 { font-size: 1.0625rem; }
+.panel-heading p,
+.section-heading p { font-size: .8125rem; color: #64788f; }
+.subtle-label,
+.count-pill { font-size: .75rem; }
+.filter-bar select,
+.search-field input,
+.date-filters input,
+.view-tabs button,
+.pill-tabs button { font-size: .875rem; }
+.date-filters,
+.record-summary > div,
+.pagination,
+.planning-summary,
+.list-caption { font-size: .8125rem; }
+.data-table { font-size: .875rem; }
+.data-table th { font-size: .75rem; }
+.data-table td { font-size: .875rem; color: #5d718b; }
+.table-link strong,
+.user-cell > span > strong { font-size: .875rem; }
+.table-link small,
+.user-cell,
+.user-cell > span > small { font-size: .75rem; }
+.frequency-pill,
+.role-pill { font-size: .75rem; }
+
+/* Pulso operativo */
+.pulse-date,
+.pulse-kicker { font-size: .8125rem; }
+.pulse-date { text-transform: none; }
+.pulse-date::first-letter { text-transform: uppercase; }
+.pulse-hero-copy > p:last-child { font-size: 1rem; }
+.pulse-metrics small { font-size: .8125rem; }
+.pulse-metrics em { font-size: .75rem; }
+.pulse-section-heading p { font-size: .8125rem; }
+.queue-section h3 { font-size: .9375rem; }
+.queue-section p { font-size: .8125rem; }
+.pulse-task-copy strong { font-size: .875rem; }
+.pulse-task-copy small,
+.pulse-task-owner small,
+.pulse-task-date small { font-size: .75rem; }
+.pulse-side-section > header h2 { font-size: 1rem; }
+.pulse-side-section > header p { font-size: .8125rem; }
+.quick-action strong,
+.coverage-list strong { font-size: .875rem; }
+.quick-action small,
+.coverage-list small,
+.coverage-pending strong,
+.coverage-pending span { font-size: .75rem; }
+
+/* Catálogos, personas y capacitación */
+.module-card h3,
+.equipment-card h3 { font-size: 1rem; }
+.module-card p,
+.location,
+.role-card p,
+.training-card p { font-size: .8125rem; color: #667c96; }
+.module-card-footer,
+.equipment-meta span,
+.equipment-bottom,
+.asset-code,
+.role-card > span,
+.training-labels > small,
+.training-cover > span,
+.page-footnote { font-size: .75rem; }
+.module-card-footer > span:last-child { font-size: .6875rem; }
+.equipment-meta strong,
+.role-card h3 { font-size: .875rem; }
+.training-banner p { font-size: .9375rem; }
+.training-banner-meta { font-size: .8125rem; }
+.training-card h3 { font-size: 1.0625rem; }
+
+/* Reportes: conservar densidad de planilla sin sacrificar lectura */
+.report-view-tabs button,
+.program-module-filter select,
+.period-caption { font-size: .8125rem; }
+.program-brand strong,
+.program-title small,
+.program-code span,
+.year-switcher small,
+.program-module-filter > span { font-size: .6875rem; }
+.report-metric small,
+.program-legend,
+.program-legend > span { font-size: .75rem; }
+.program-table { font-size: .75rem; }
+.program-table thead th,
+.program-table .program-group th,
+.program-table tbody .activity-column small,
+.owner-column > span:last-child,
+.frequency-label { font-size: .6875rem; }
+.program-table tbody .activity-column strong { font-size: .75rem; }
+.report-guidance h3,
+.report-question h3,
+.period-module-row strong { font-size: .875rem; }
+.report-guidance p,
+.report-question p,
+.report-data-note strong,
+.period-module-row span,
+.period-empty span { font-size: .75rem; }
+.report-data-note span { font-size: .6875rem; }
+
+/* Formularios y detalles operativos */
+.field > span,
+.control-field label { font-size: .875rem; color: #4f6782; }
+.field input,
+.field select,
+.field textarea { font-size: .9375rem; }
+.field small,
+.control-field small,
+.form-intro p,
+.control-section p,
+.modal-header p { font-size: .8125rem; color: #647a94; }
+.form-steps > div,
+.responsible-note small,
+.responsible-note strong,
+.control-section h3,
+.segmented button,
+.inline-notice,
+.form-subtitle,
+.checkbox-line { font-size: .8125rem; }
+.detail-metadata span,
+.detail-task small,
+.upload-area span,
+.notification-list small { font-size: .75rem; }
+.detail-metadata strong,
+.detail-row,
+.detail-section h3,
+.detail-task strong,
+.upload-area strong,
+.notification-list strong { font-size: .8125rem; }
+.operational-progress strong { font-size: .75rem; }
+.operational-context > p,
+.form-safety-note span,
+.closing-summary > span,
+.closing-summary dt,
+.closing-summary dd { font-size: .75rem; }
+.form-document small,
+.section-progress-list small,
+.equipment-identity small,
+.equipment-identity dt,
+.responsible-card small,
+.responsible-card span { font-size: .6875rem; }
+.form-document strong,
+.section-progress-list strong,
+.equipment-identity strong,
+.equipment-identity dd,
+.responsible-card strong { font-size: .8125rem; }
+.workspace-heading h3 { font-size: 1.0625rem; }
+.workspace-heading p,
+.workspace-heading > strong { font-size: .75rem; }
+.verification-section > header h3,
+.verification-copy label,
+.result-selector strong,
+.evidence-section > div:first-child h3,
+.evidence-slot-heading strong,
+.ready-to-save strong { font-size: .875rem; }
+.verification-section > header p,
+.verification-section > header > small,
+.verification-copy small,
+.result-selector small,
+.evidence-section > div:first-child p,
+.evidence-slot-heading small,
+.ready-to-save span,
+.operational-footer > span { font-size: .75rem; }
+.operational-choice button { font-size: .8125rem; min-height: 42px; }
+.operational-number input,
+.verification-row > textarea { font-size: .9375rem; }
+.operational-number > div > span { font-size: .6875rem; }
+
+/* Portal público */
+.public-training-brand strong { font-size: .875rem; }
+.public-training-brand small,
+.public-kicker,
+.public-training-heading > div > span,
+.public-resource-cover span { font-size: .75rem; }
+.public-training-hero p { font-size: 1rem; }
+.public-training-meta { font-size: .8125rem; }
+.public-training-search input,
+.public-training-filters button { font-size: .8125rem; }
+
+@media (max-width: 880px) {
+  .mobile-navigation > a,
+  .mobile-navigation > button { font-size: .6875rem; }
+  .premium-preview { font-size: .6875rem; }
+}
+
+@media (max-width: 680px) {
+  .main-content { padding-left: 18px; padding-right: 18px; }
+  .page-heading p,
+  .pulse-hero-copy > p:last-child { font-size: .9375rem; }
+  .pulse-metrics small,
+  .pulse-metrics em { font-size: .75rem; }
+  .pulse-section-heading p,
+  .queue-section p,
+  .pulse-side-section > header p { font-size: .75rem; }
+  .pulse-task-copy strong,
+  .quick-action strong,
+  .coverage-list strong { font-size: .8125rem; }
+  .pulse-task-copy small,
+  .pulse-task-owner small,
+  .pulse-task-date small,
+  .quick-action small,
+  .coverage-list small { font-size: .6875rem; }
+  .data-table th { font-size: .6875rem; }
+  .data-table td,
+  .table-link strong { font-size: .8125rem; }
+  .field input,
+  .field select,
+  .field textarea,
+  .public-training-search input,
+  .operational-number input,
+  .verification-row > textarea,
+  .result-selector select { font-size: 1rem; }
+  .verification-copy label,
+  .operational-choice button { font-size: .8125rem; }
+  .verification-copy small,
+  .workspace-heading p { font-size: .75rem; }
+  .modal-footer .button { font-size: .8125rem; }
+  .app-footer { font-size: .6875rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}

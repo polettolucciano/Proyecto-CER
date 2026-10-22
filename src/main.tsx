@@ -4,7 +4,7 @@ import { AppProvider } from './store';
 import App from './App';
 import './styles/tokens.css';
 import './styles.css';
-import './readability.css';
 import './premium.css';
+import './readability.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<AppErrorBoundary><AppProvider><App /></AppProvider></AppErrorBoundary>);

@@ -50,6 +50,7 @@ export function Dashboard({ actions }: { actions: AppActions }) {
   const { data, user } = useApp();
   const visible = visibleData(data, user);
   const date = today();
+  const displayDate = formatDate(date, { weekday: 'long', day: 'numeric', month: 'long' });
   const { busy, download } = useExportRecords();
 
   const summary = useMemo(() => {
@@ -72,7 +73,7 @@ export function Dashboard({ actions }: { actions: AppActions }) {
     <div className="pulse-dashboard">
       <header className="pulse-hero">
         <div className="pulse-hero-copy">
-          <div className="pulse-date"><span />{formatDate(date, { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+          <div className="pulse-date"><span />{displayDate.charAt(0).toUpperCase() + displayDate.slice(1)}</div>
           <p className="pulse-kicker">Pulso operativo CER</p>
           <h1>{attention ? `${attention} ${attention === 1 ? 'control necesita' : 'controles necesitan'} atención hoy` : 'El centro está al día'}</h1>
           <p>{attention ? `${firstName}, empezá por las tareas vencidas y continuá con la agenda de hoy.` : `${firstName}, no hay controles vencidos ni programados para hoy.`}</p>
