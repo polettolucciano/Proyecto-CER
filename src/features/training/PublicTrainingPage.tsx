@@ -1,14 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Icon } from '../../components';
 import { useApp } from '../../store';
+import type { Training } from '../../types';
 
 const allCategories = 'Todos';
 
 export function PublicTrainingPage() {
   const { data } = useApp();
+  return <PublicTrainingContent materials={data.training}/>;
+}
+export function PublicTrainingContent({materials:source,remote=false}:{materials:Training[];remote?:boolean}) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState(allCategories);
-  const published = data.training.filter(material => material.published);
+  const published = source.filter(material => material.published);
   const categories = useMemo(() => [allCategories, ...Array.from(new Set(published.map(material => material.category)))], [published]);
   const materials = published.filter(material => (category === allCategories || material.category === category) && `${material.title} ${material.description} ${material.category}`.toLowerCase().includes(query.trim().toLowerCase()));
 
@@ -39,7 +43,7 @@ export function PublicTrainingPage() {
         </article>)}</div> : <div className="public-training-empty"><span><Icon name={published.length ? 'Search' : 'BookOpen'} size={29} /></span><h3>{published.length ? 'No encontramos recursos con esos filtros' : 'La biblioteca pública está preparada'}</h3><p>{published.length ? 'Probá otra búsqueda o elegí una categoría diferente.' : 'Los materiales aparecerán aquí cuando CER los publique desde el panel de gestión.'}</p>{(query || category !== allCategories) && <button className="button secondary" type="button" onClick={() => { setQuery(''); setCategory(allCategories); }}>Limpiar filtros</button>}</div>}
       </section>
 
-      <p className="public-preview-note"><Icon name="Monitor" size={15} /><span><strong>Vista previa local.</strong> En esta etapa los recursos publicados se leen solamente desde este navegador. El acceso público real entre dispositivos se habilitará con el backend.</span></p>
+      {!remote && <p className="public-preview-note"><Icon name="Monitor" size={15} /><span><strong>Vista previa local.</strong> Los recursos publicados se leen solamente desde este navegador.</span></p>}
     </main>
 
     <footer className="public-training-footer"><span>Centro de Enfermedades Renales</span><span>Capacitaciones y recursos públicos</span></footer>

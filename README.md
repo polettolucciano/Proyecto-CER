@@ -1,53 +1,52 @@
 # Proyecto CER
 
-Aplicación web para la gestión operativa de controles y mantenimiento del Centro de Enfermedades Renales.
+Gestión de equipos, controles, planificación e historial de mantenimiento del Centro de Enfermedades Renales.
 
-## Estado actual
+## Estado real
 
-Esta versión es un **prototipo frontend**. Los datos se guardan en IndexedDB y permanecen solamente en el navegador donde fueron cargados. No existe todavía autenticación real, base de datos compartida ni autorización de servidor.
+Hay dos modos separados:
 
-Funcionalidades disponibles:
+- **demo** (predeterminado): datos de ejemplo en IndexedDB, solo en ese navegador; selector de roles para presentación.
+- **supabase**: adaptador, login, migraciones PostgreSQL, funciones transaccionales y políticas de Storage preparados en este repositorio. Exige una cuenta personal y configuración válida; no sustituye errores por datos de ejemplo.
 
-- Pulso operativo con tareas vencidas, del día y próximas.
-- Planificación en lista, calendario mensual y programa anual.
-- Formularios documentados para grupo electrógeno, ósmosis diaria y loop.
-- Evidencia fotográfica local.
-- Historial con búsqueda, filtros, revisiones, rectificaciones y anulaciones trazables.
-- Guardado confirmado antes de cerrar formularios, bloqueo de dobles envíos y protección ante datos locales incompatibles.
-- Inventario de equipos y sectores.
-- Reglas de integridad para impedir que equipos o tareas con historial cambien de identidad operativa.
-- Perfiles y permisos de demostración con restricciones centralizadas por pantalla, módulo y acción.
-- Informes por período y programa anual.
-- Exportación XLSX con registros, verificaciones y trazabilidad.
-- Gestión de capacitaciones con borradores, publicación y una biblioteca pública separada del panel privado.
+**Todavía no se creó ni conectó un proyecto remoto.** Los workflows de respaldo están desactivados. No están comprobados el correo de invitación, la persistencia entre dispositivos ni una restauración real. La versión publicada sigue siendo la demo hasta un despliegue autorizado.
 
-Los módulos Carro de paro, Fumigación, Electricidad, Salas y Otros mantenimientos conservan una ficha inicial hasta recibir y validar sus planillas específicas con CER.
+## Funcionalidades
 
-## Desarrollo
+Pulso operativo para Administración, calendario para Enfermería, inventario, tareas recurrentes, controles de grupo electrógeno/ósmosis/loop, fotos, búsqueda e historial, rectificaciones/anulaciones que preservan originales, reportes y exportación XLSX. Biblioteca pública de capacitaciones separada del panel privado.
+
+Carro de paro, Fumigación, Electricidad, Salas y Otros conservan fichas iniciales hasta validar sus planillas. Las notificaciones operativas por correo/celular siguen pendientes; no son las alertas de infraestructura de los backups.
+
+## Desarrollo local
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-## Verificaciones
+Sin variables se abre la demo. Para conectar **un entorno de pruebas**, seguir [Configuración de Supabase](docs/SETUP_SUPABASE.md). No migrar automáticamente los ejemplos del navegador.
+
+## Verificación
 
 ```bash
 npm run typecheck
-npm test
+npm run test:frontend
+npm run test:backend
+npm run test:backups
 npm run build
 ```
 
-## Arquitectura
+Usar solo las comprobaciones relevantes para cada cambio. Las pruebas SQL emplean PostgreSQL embebido PGlite y roles de prueba: no reemplazan la integración con Auth y Storage reales. No hay un comando lint configurado.
 
-La aplicación está organizada por funcionalidades. Las pantallas dependen de reglas y contratos, mientras que IndexedDB queda aislado como adaptador de infraestructura. Los datos de demostración y las definiciones operativas están separados.
+## Documentación
 
-- [Arquitectura y convenciones](docs/ARCHITECTURE.md)
-- [Plan de integración futura con Supabase](docs/SUPABASE_PLAN.md)
-- [Estado y riesgos de seguridad](SECURITY.md)
+- [Arquitectura y esquema](docs/ARCHITECTURE.md)
+- [Supabase y usuarios](docs/SETUP_SUPABASE.md)
+- [Variables de entorno](docs/ENVIRONMENT.md)
+- [Backups, Drive/R2 y recuperación](docs/BACKUPS.md)
+- [Despliegue, validación y reversión](docs/DEPLOYMENT.md)
+- [Evidencia de QA](docs/QA_BACKEND.md)
+- [Seguridad y riesgos pendientes](SECURITY.md)
+- [Decisiones y alcance de implementación](docs/BACKEND_IMPLEMENTATION.md)
 
-## Próxima etapa de infraestructura
-
-La conexión futura con Supabase deberá incorporar Auth, PostgreSQL, Storage para evidencias, RLS por rol y módulo, auditoría, migraciones versionadas, pruebas de autorización y estrategia de copias de seguridad. No deben utilizarse datos operativos reales hasta completar y verificar esa etapa.
-
-En el despliegue deberán configurarse además encabezados HTTP en la plataforma de hosting: `Content-Security-Policy`, `X-Content-Type-Options`, protección contra clickjacking, `Referrer-Policy` y `Permissions-Policy`. La política incluida actualmente en HTML es una defensa inicial para el prototipo, no reemplaza los encabezados del servidor.
+No activar datos reales ni producción antes de superar los pendientes documentados.

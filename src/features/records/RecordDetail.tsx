@@ -15,7 +15,7 @@ export function RecordDetail({ record, onClose, onCorrect }: { record: Maintenan
   const voidLock = useRef(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
-  const module = moduleById(record.module);
+  const module = record.formDefinition ?? moduleById(record.module);
   const equipment = data.equipment.find(item => item.id === record.equipmentId);
   const owner = data.users.find(item => item.id === record.userId);
   const events = data.auditEvents.filter(event => event.entityId === record.id || event.relatedEntityId === record.id).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));

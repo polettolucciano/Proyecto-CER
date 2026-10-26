@@ -5,7 +5,7 @@ import { usePersistentSave } from '../../hooks/usePersistentSave';
 import { useApp } from '../../store';
 
 export function SettingsPage() {
-  const { data, user, toast, saving, storageError } = useApp();
+  const { data, user, toast, saving, storageError,remote } = useApp();
   const { save, submitting, saveError } = usePersistentSave();
   const [draft, setDraft] = useState(data.settings);
   const admin = canManage(user);
@@ -15,7 +15,7 @@ export function SettingsPage() {
     event.preventDefault();
     if (!admin || !dirty) return;
     if (!await save(workspace => ({ ...workspace, settings: draft }))) return;
-    toast('Preferencias actualizadas y confirmadas en este navegador.');
+    toast(remote ? 'Preferencias confirmadas en el servidor.' : 'Preferencias actualizadas y confirmadas en este navegador.');
   }
 
   return <>
@@ -35,15 +35,15 @@ export function SettingsPage() {
       </section>
 
       <section className="panel">
-        <div className="panel-heading"><div><h2>Estado de esta versión</h2><p>Frontend de presentación.</p></div><span className="module-icon teal small"><Icon name="Monitor" /></span></div>
+        <div className="panel-heading"><div><h2>Estado de conexión</h2><p>{remote ? 'Servicios del centro.' : 'Frontend de presentación.'}</p></div><span className="module-icon teal small"><Icon name="Monitor" /></span></div>
         <div className="settings-body">
-          <div className="connection-state"><span className="live-dot" /><strong>{storageError ? 'Almacenamiento no disponible' : saving ? 'Guardando cambios…' : 'Datos guardados en este navegador'}</strong></div>
-          <p className="muted">Los registros, fotos y preferencias se conservan al recargar en este mismo navegador. Todavía no se comparten entre dispositivos.</p>
+          <div className="connection-state"><span className="live-dot" /><strong>{storageError ? 'Almacenamiento no disponible' : saving ? 'Guardando cambios…' : 'Datos disponibles'}</strong></div>
+          <p className="muted">{remote ? 'Los registros se consultan desde el servidor con los permisos de tu cuenta.' : 'Los datos se conservan solo en este navegador.'}</p>
           <div className="connection-list">
             <div><Icon name="CheckCircle2" /><span>Interfaz y formularios conectados</span></div>
             <div><Icon name="CheckCircle2" /><span>Exportación de registros a Excel</span></div>
-            <div className="pending"><Icon name="Clock3" /><span>Inicio de sesión y permisos de servidor</span></div>
-            <div className="pending"><Icon name="Clock3" /><span>Base de datos compartida y copias de seguridad</span></div>
+            <div className={remote ? undefined : 'pending'}><Icon name={remote ? 'CheckCircle2' : 'Clock3'} /><span>{remote?'Sesión personal y permisos de servidor':'Inicio de sesión y permisos de servidor'}</span></div>
+            <div className="pending"><Icon name="Clock3" /><span>{remote?'Respaldos: consultar su verificación en GitHub Actions':'Base de datos compartida y copias de seguridad'}</span></div>
             <div className="pending"><Icon name="Clock3" /><span>Alertas por correo y celular</span></div>
           </div>
         </div>

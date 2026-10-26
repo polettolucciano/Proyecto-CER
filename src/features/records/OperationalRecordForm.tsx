@@ -56,7 +56,7 @@ function EvidenceUpload({ label, category, photos, onAdd, onRemove }: { label: s
 }
 
 export function OperationalRecordForm({ initialModule, initialEquipment, task, sourceRecord, onClose }: { initialModule?: ModuleId; initialEquipment?: string; task?: Task; sourceRecord?: MaintenanceRecord; onClose: () => void }) {
-  const { data, user, update, toast } = useApp();
+  const { data, user, update, toast,remote } = useApp();
   const available = modules.filter(module => allowed(user, module.id));
   const initialModuleId = sourceRecord?.module ?? task?.module ?? initialModule ?? available[0]?.id ?? 'generator';
   const initialEquipmentId = sourceRecord?.equipmentId ?? task?.equipmentId ?? initialEquipment ?? data.equipment.find(item => item.module === initialModuleId)?.id ?? '';
@@ -64,7 +64,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
   const initialDate = sourceRecord?.date ?? today();
   const [moduleId, setModuleId] = useState<ModuleId>(initialModuleId);
   const [pendingModule, setPendingModule] = useState<ModuleId | null>(null);
-  const module = moduleById(moduleId);
+  const module = sourceRecord?.formDefinition ?? moduleById(moduleId);
   const meta = recordModuleMeta[moduleId] ?? { form: 'Registro de control', title: module.name, cadence: module.frequency, guidance: module.description };
   const [equipmentId, setEquipmentId] = useState(initialEquipmentId);
   const [taskId, setTaskId] = useState(initialTaskId);
@@ -81,6 +81,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
   const formRef = useRef<HTMLFormElement>(null);
   const confirmationRef = useRef<HTMLDivElement>(null);
   const submitLock = useRef(false);
+  const recordId = useRef(`CER-${new Date().getFullYear()}-${crypto.randomUUID()}`);
   const equipment = data.equipment.find(item => item.id === equipmentId);
   const requiredFields = useMemo(() => module.sections.flatMap(section => section.fields).filter(field => !field.optional), [module]);
   const completedRequired = requiredFields.filter(field => values[field.id]?.trim()).length;
@@ -191,7 +192,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
     }
     submitLock.current = true;
     setSubmitting(true);
-    const record = createMaintenanceRecord({ module: moduleId, equipmentId, taskId: taskId || undefined, date, userId: user.id, hasIssue, values, notes, photos }, sourceRecord);
+    const record = {...createMaintenanceRecord({ module: moduleId, equipmentId, taskId: taskId || undefined, date, userId: user.id, hasIssue, values, notes, photos }, sourceRecord,new Date(),recordId.current),duplicateApproved};
     const saved = await update(workspace => registerRecordInWorkspace(workspace, record, sourceRecord));
     if (!saved) {
       submitLock.current = false;
@@ -223,7 +224,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
             <div className="form-document"><ModuleIcon module={moduleId} /><div><small>{meta.form}</small><strong>{module.name}</strong></div></div>
             <p>{meta.guidance}</p>
             <div className="closing-summary"><span><Icon name="ClipboardCheck" size={17} />Resumen del control</span><dl><div><dt>Fecha</dt><dd>{formatDate(date)}</dd></div><div><dt>Equipo</dt><dd>{equipment?.code ?? '—'}</dd></div><div><dt>Responsable</dt><dd>{user.name}</dd></div><div><dt>Verificaciones</dt><dd>{completedRequired}/{requiredFields.length}</dd></div></dl></div>
-            <div className="form-safety-note"><Icon name="ShieldCheck" size={16} /><span>Prototipo frontend. Los datos se guardan únicamente en este navegador.</span></div>
+            <div className="form-safety-note"><Icon name="ShieldCheck" size={16} /><span>{remote?'El registro conservará tu autoría y fecha.':'Prototipo frontend. Los datos se guardan únicamente en este navegador.'}</span></div>
           </aside>
 
           <div className="operational-workspace">

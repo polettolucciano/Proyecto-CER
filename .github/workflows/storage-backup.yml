@@ -1,0 +1,36 @@
+name: CER Storage backup
+on:
+  schedule:
+    - cron: '47 6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cer-storage-backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    if: vars.CER_BACKUPS_ENABLED == 'true' && vars.CER_STORAGE_BACKUP_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: cer-backups
+    env:
+      CER_STORAGE_REMOTE: ${{ vars.CER_STORAGE_REMOTE }}
+      CER_BACKUP_REMOTE: ${{ vars.CER_BACKUP_REMOTE }}
+      CER_BACKUP_AGE_RECIPIENT: ${{ vars.CER_BACKUP_AGE_RECIPIENT }}
+      CER_SOURCE_PROJECT_REF: ${{ vars.CER_SOURCE_PROJECT_REF }}
+      RCLONE_CONFIG: ${{ runner.temp }}/rclone.conf
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: sudo apt-get update && sudo apt-get install -y age rclone
+      - env:
+          RCLONE_CONFIG_TEXT: ${{ secrets.RCLONE_CONFIG_STORAGE }}
+        run: node -e 'require("fs").writeFileSync(process.env.RCLONE_CONFIG,process.env.RCLONE_CONFIG_TEXT,{mode:0o600})'
+      - run: node scripts/backups/storage.mjs generate
+      - if: failure()
+        env:
+          CER_ALERT_WEBHOOK: ${{ secrets.CER_ALERT_WEBHOOK }}
+        run: node scripts/backups/notify.mjs

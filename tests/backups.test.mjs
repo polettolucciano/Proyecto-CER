@@ -1,0 +1,7 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {rotationCandidates,staleBackup,assertRestoreTarget} from '../scripts/backups/policy.mjs';
+const now=new Date('2026-10-26T12:00:00Z');
+const copies=Array.from({length:34},(_,i)=>({name:`CER-202610${String(26-i).padStart(2,'0')}T120000Z.tar.gz.age`,createdAt:new Date(+now-i*86400000).toISOString(),verified:true,size:100}));
+test('no rota sin una copia nueva válida',()=>{assert.throws(()=>rotationCandidates([],now));assert.throws(()=>rotationCandidates(copies.slice(3,7),now));});
+test('conserva las últimas 30 copias y nunca acepta nombres externos',()=>{const files=Array.from({length:34},(_,i)=>({...copies[0],name:`CER-202609${String(i%28+1).padStart(2,'0')}T${String(i).padStart(6,'0')}Z.tar.gz.age`,createdAt:new Date(+now-i*86400000).toISOString()}));assert.equal(rotationCandidates(files,now).length,4);assert.equal(rotationCandidates([...files,{name:'otro-archivo',verified:true,size:1,createdAt:now.toISOString()}],now).length,4);});
+test('detecta respaldo antiguo y prohíbe restaurar en origen',()=>{assert.equal(staleBackup([],now),true);assert.equal(staleBackup([copies[0]],now),false);assert.throws(()=>assertRestoreTarget('postgresql://u:p@production/db','postgresql://u:p@production/db','production'));assert.doesNotThrow(()=>assertRestoreTarget('postgresql://u:p@test/db','postgresql://u:p@production/db','test'));});

@@ -1,0 +1,4 @@
+.auth-page{min-height:100dvh;display:grid;place-items:center;padding:24px;background:var(--bg)}
+.auth-card{width:min(440px,100%);padding:32px;border:1px solid var(--border);border-radius:18px;background:white;box-shadow:var(--shadow)}
+.auth-card h1{font-size:30px;margin:20px 0 10px}.auth-card>p{font-size:14px;color:var(--muted);margin-bottom:22px}
+.auth-card .button{width:100%;margin-top:12px}.auth-card .auth-help{font-size:13px;margin:20px 0}.auth-card input{font-size:16px}

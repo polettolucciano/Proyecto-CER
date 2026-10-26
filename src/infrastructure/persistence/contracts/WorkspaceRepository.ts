@@ -7,6 +7,7 @@ import type { Workspace } from '../../../types';
  * agregado se reemplazará gradualmente por repositorios orientados al negocio.
  */
 export interface WorkspaceRepository {
+  readonly remote?: boolean;
   load(): Promise<unknown>;
   save(data: Workspace): Promise<void>;
 }

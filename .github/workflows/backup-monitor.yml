@@ -1,0 +1,35 @@
+name: CER backup freshness
+on:
+  schedule:
+    - cron: '43 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  monitor:
+    if: vars.CER_BACKUPS_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: cer-backups-monitor
+    env:
+      CER_BACKUP_REMOTE: ${{ vars.CER_BACKUP_REMOTE }}
+      RCLONE_CONFIG: ${{ runner.temp }}/rclone.conf
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: sudo apt-get update && sudo apt-get install -y rclone
+      - env:
+          RCLONE_CONFIG_TEXT: ${{ secrets.RCLONE_CONFIG_READ }}
+        run: node -e 'require("fs").writeFileSync(process.env.RCLONE_CONFIG,process.env.RCLONE_CONFIG_TEXT,{mode:0o600})'
+      - run: node scripts/backups/backup.mjs monitor
+      - if: vars.CER_STORAGE_BACKUP_ENABLED == 'true'
+        run: node scripts/backups/storage.mjs monitor
+      - name: Avisar fallo
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CER_ALERT_WEBHOOK: ${{ secrets.CER_ALERT_WEBHOOK }}
+        run: node scripts/backups/notify.mjs

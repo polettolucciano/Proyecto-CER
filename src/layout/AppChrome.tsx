@@ -3,6 +3,7 @@ import { Avatar, Icon } from '../components';
 import { canAccessPage } from '../domain';
 import { navigation, pageLabel, primaryNavigation } from '../navigation';
 import type { Page, TeamUser } from '../types';
+import { useApp } from '../store';
 
 interface SidebarProps {
   currentPage: Page;
@@ -15,6 +16,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPage, location, overdue, open, user, onClose, onNavigate }: SidebarProps) {
+  const {remote}=useApp();
   const primary = primaryNavigation(user);
   const secondary = navigation.filter(item => !primary.includes(item.id) && canAccessPage(user, item.id) && (user.role === 'Administrador' || item.group !== 'Administración'));
   const links = (items: typeof navigation) => items.map(item => (
@@ -49,7 +51,7 @@ export function Sidebar({ currentPage, location, overdue, open, user, onClose, o
         <div className="sidebar-bottom">
           <div className="demo-card">
             <span className="demo-card-icon"><Icon name="Monitor" size={18} /></span>
-            <div><strong>Versión de demostración</strong><p>Los cambios se guardan solamente en este navegador.</p></div>
+            <div><strong>{remote?'CER conectado':'Versión de demostración'}</strong><p>{remote?'Sesión personal. Datos compartidos del centro.':'Los cambios se guardan solamente en este navegador.'}</p></div>
           </div>
           <div className="sidebar-footer"><span className="live-dot" /><span>Sistema CER</span><small>v0.3</small></div>
         </div>
@@ -72,6 +74,7 @@ interface TopbarProps {
 }
 
 export function Topbar(props: TopbarProps) {
+  const {remote,signOut,refresh}=useApp();
   const profileRef = useRef<HTMLDivElement>(null);
   const title = pageLabel(props.currentPage, props.user);
   useEffect(() => {
@@ -97,14 +100,14 @@ export function Topbar(props: TopbarProps) {
           <Icon name="Bell" size={20} />{props.overdue > 0 && <i />}
         </button>
         <div className="profile-menu" ref={profileRef}>
-          <button className="profile-trigger" aria-label="Abrir perfiles de demostración" aria-expanded={props.profileOpen} onClick={props.onProfileToggle}>
+          <button className="profile-trigger" aria-label={remote?'Abrir menú de cuenta':'Abrir perfiles de demostración'} aria-expanded={props.profileOpen} onClick={props.onProfileToggle}>
             <Avatar initials={props.user.initials} />
             <span><strong>{props.user.name}</strong><small>{props.user.role}</small></span>
             <Icon name="ChevronDown" size={14} />
           </button>
           {props.profileOpen && (
             <div className="profile-dropdown">
-              <div className="dropdown-heading">Perfiles de demostración<small>La autorización real se implementará con el backend.</small></div>
+              {remote ? <><div className="dropdown-heading">{props.user.name}<small>{props.user.role}</small></div><button onClick={()=>void refresh()}>Actualizar datos</button><button onClick={()=>void signOut()}>Cerrar sesión</button></> : <><div className="dropdown-heading">Perfiles de demostración<small>La autorización real se implementará con el backend.</small></div>
               {(['Administrador', 'Enfermería'] as const).map(role => <section className="demo-role-group" key={role} aria-label={`Probar rol ${role}`}><h3>{role}</h3>{props.users.filter(item => item.active && item.role === role).map(item => (
                 <button key={item.id} onClick={() => props.onProfileChange(item.id)}>
                   <Avatar initials={item.initials} className="tiny-avatar" />
@@ -112,7 +115,7 @@ export function Topbar(props: TopbarProps) {
                   {item.id === props.user.id && <Icon name="Check" size={16} />}
                 </button>
               ))}</section>)}
-              {props.users.some(item => item.active && item.role === 'Supervisor') && <details className="legacy-demo-profiles"><summary>Otros perfiles existentes</summary>{props.users.filter(item => item.active && item.role === 'Supervisor').map(item => <button key={item.id} onClick={() => props.onProfileChange(item.id)}><Avatar initials={item.initials} className="tiny-avatar" /><span><strong>{item.role}</strong><small>{item.name}</small></span>{item.id === props.user.id && <Icon name="Check" size={16} />}</button>)}</details>}
+              {props.users.some(item => item.active && item.role === 'Supervisor') && <details className="legacy-demo-profiles"><summary>Otros perfiles existentes</summary>{props.users.filter(item => item.active && item.role === 'Supervisor').map(item => <button key={item.id} onClick={() => props.onProfileChange(item.id)}><Avatar initials={item.initials} className="tiny-avatar" /><span><strong>{item.role}</strong><small>{item.name}</small></span>{item.id === props.user.id && <Icon name="Check" size={16} />}</button>)}</details>}</>}
             </div>
           )}
         </div>

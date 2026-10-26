@@ -44,7 +44,7 @@ function readRoute(): { page: Page; module?: ModuleId } {
 }
 
 export default function App() {
-  const { data, user, setUserId, saving, storageError } = useApp();
+  const { data, user, setUserId, saving, storageError,remote,refresh } = useApp();
   const visible = visibleData(data, user);
   const [route, setRoute] = useState(readRoute);
   const [dialog, setDialog] = useState<Dialog | null>(null);
@@ -111,10 +111,10 @@ export default function App() {
       <div className="app-main">
         <Topbar currentPage={currentPage} overdue={overdue} profileOpen={profile} user={user} users={data.users} onMenu={() => setSidebar(true)} onNotifications={() => setDialog({ type: 'notifications' })} onProfileChange={changeProfile} onProfileToggle={() => setProfile(value => !value)} onSearch={() => setDialog({ type: 'search' })} />
         <div className="preview-strip premium-preview" role="status">
-          <span><Icon name="Monitor" size={14} /><strong>Demostración</strong><span className="preview-detail">Datos de ejemplo · Sin conexión a Supabase</span></span>
-          <span className={storageError ? 'storage-warning' : ''}><i className={saving ? 'saving-dot' : 'saved-dot'} />{storageError ? 'Revisar almacenamiento' : saving ? 'Guardando…' : 'Guardado en este navegador'}</span>
+          <span><Icon name="Monitor" size={14} /><strong>{remote?'CER':'Demostración'}</strong><span className="preview-detail">{remote?'Sesión personal · Datos del centro':'Datos de ejemplo · Sin conexión a Supabase'}</span></span>
+          <span className={storageError ? 'storage-warning' : ''}><i className={saving ? 'saving-dot' : 'saved-dot'} />{storageError ? 'Revisar conexión' : saving ? 'Guardando…' : remote?'Conectado al centro':'Guardado en este navegador'}</span>
         </div>
-        {storageError && <div className="storage-error" role="alert"><Icon name="TriangleAlert" size={17} />{storageError}</div>}
+        {storageError && <div className="storage-error" role="alert"><Icon name="TriangleAlert" size={17} />{storageError}{remote && <button onClick={()=>void refresh()}>Actualizar datos</button>}</div>}
         <main id="main-content" className="main-content" tabIndex={-1}>
           {currentPage === 'dashboard' && <Dashboard actions={actions} />}
           {currentPage === 'planning' && <PlanningPage actions={actions} />}
@@ -125,7 +125,7 @@ export default function App() {
           {currentPage === 'users' && <UsersPage actions={actions} />}
           {currentPage === 'settings' && <SettingsPage />}
         </main>
-        <footer className="app-footer"><span>Centro de Enfermedades Renales</span><span>Prototipo frontend · Datos de demostración</span></footer>
+        <footer className="app-footer"><span>Centro de Enfermedades Renales</span><span>{remote?'Gestión operativa CER':'Prototipo frontend · Datos de demostración'}</span></footer>
       </div>
 
       <MobileNavigation user={user} currentPage={currentPage} onMenu={() => setSidebar(true)} onNavigate={navigate} onNewRecord={() => actions.newRecord()} />

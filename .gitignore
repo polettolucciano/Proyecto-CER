@@ -8,3 +8,9 @@ dist/
 .local/
 coverage/
 *.tsbuildinfo
+/backups/
+*.age
+*.dump
+*.sql.gz
+rclone.conf
+age-identity*
