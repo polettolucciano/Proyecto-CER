@@ -1,4 +1,4 @@
-import type { Page } from './types';
+import type { Page, TeamUser } from './types';
 
 export interface NavigationItem {
   id: Page;
@@ -20,3 +20,16 @@ export const navigation: NavigationItem[] = [
 ];
 
 export const navigationGroups: NavigationItem['group'][] = ['Operación', 'Conocimiento', 'Administración'];
+
+/** Agrupación visual; los permisos siguen comprobándose por separado. */
+export function primaryNavigation(user: TeamUser): Page[] {
+  return user.role === 'Enfermería' ? ['dashboard', 'records', 'training'] : ['dashboard', 'planning', 'records', 'reports'];
+}
+
+export function pageLabel(page: Page, user: TeamUser) {
+  if (page === 'dashboard') return user.role === 'Enfermería' ? 'Hoy' : 'Resumen del centro';
+  if (page === 'planning') return 'Agenda';
+  if (page === 'records') return 'Historial';
+  if (page === 'reports') return 'Informes';
+  return navigation.find(item => item.id === page)?.label ?? 'CER Gestión';
+}

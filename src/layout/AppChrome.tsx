@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Avatar, Icon } from '../components';
 import { canAccessPage } from '../domain';
-import { navigation, navigationGroups } from '../navigation';
+import { navigation, pageLabel, primaryNavigation } from '../navigation';
 import type { Page, TeamUser } from '../types';
 
 interface SidebarProps {
@@ -15,6 +15,14 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPage, location, overdue, open, user, onClose, onNavigate }: SidebarProps) {
+  const primary = primaryNavigation(user);
+  const secondary = navigation.filter(item => !primary.includes(item.id) && canAccessPage(user, item.id));
+  const links = (items: typeof navigation) => items.map(item => (
+    <a key={item.id} href={`#${item.id}`} className={`nav-item ${currentPage === item.id ? 'active' : ''}`} aria-current={currentPage === item.id ? 'page' : undefined} onClick={() => onNavigate(item.id)}>
+      <Icon name={item.icon} size={20} /><span>{pageLabel(item.id, user)}</span>
+      {item.id === 'planning' && overdue > 0 && <b className="nav-count">{overdue}</b>}
+    </a>
+  ));
   return (
     <>
       {open && <button className="sidebar-overlay" aria-label="Cerrar menú de navegación" onClick={onClose} />}
@@ -31,26 +39,11 @@ export function Sidebar({ currentPage, location, overdue, open, user, onClose, o
         </div>
 
         <nav aria-label="Navegación principal">
-          {navigationGroups.map(group => (
-            <div className="nav-group" key={group}>
-              <h2>{group}</h2>
-              {navigation
-                .filter(item => item.group === group && canAccessPage(user, item.id))
-                .map(item => (
-                  <a
-                    key={item.id}
-                    href={`#${item.id}`}
-                    className={`nav-item ${currentPage === item.id ? 'active' : ''}`}
-                    aria-current={currentPage === item.id ? 'page' : undefined}
-                    onClick={() => onNavigate(item.id)}
-                  >
-                    <Icon name={item.icon} size={20} />
-                    <span>{item.label}</span>
-                    {item.id === 'planning' && overdue > 0 && <b className="nav-count">{overdue}</b>}
-                  </a>
-                ))}
-            </div>
-          ))}
+          <div className="nav-group">{links(navigation.filter(item => primary.includes(item.id) && canAccessPage(user, item.id)))}</div>
+          <details className="secondary-navigation" key={`${user.id}-${secondary.some(item => item.id === currentPage)}`} open={secondary.some(item => item.id === currentPage) || undefined}>
+            <summary><Icon name="SlidersHorizontal" size={18} />{user.role === 'Administrador' ? 'Administración y más' : 'Más herramientas'}<Icon name="ChevronDown" size={15} /></summary>
+            {links(secondary)}
+          </details>
         </nav>
 
         <div className="sidebar-bottom">
@@ -80,7 +73,7 @@ interface TopbarProps {
 
 export function Topbar(props: TopbarProps) {
   const profileRef = useRef<HTMLDivElement>(null);
-  const title = navigation.find(item => item.id === props.currentPage)?.label ?? 'CER Gestión';
+  const title = pageLabel(props.currentPage, props.user);
   useEffect(() => {
     if (!props.profileOpen) return;
     function closeOnOutsideClick(event: MouseEvent) {
@@ -128,16 +121,17 @@ export function Topbar(props: TopbarProps) {
 }
 
 interface MobileNavigationProps {
+  user: TeamUser;
   currentPage: Page;
   onMenu: () => void;
   onNavigate: (page: Page) => void;
   onNewRecord: () => void;
 }
 
-export function MobileNavigation({ currentPage, onMenu, onNavigate, onNewRecord }: MobileNavigationProps) {
+export function MobileNavigation({ user, currentPage, onMenu, onNavigate, onNewRecord }: MobileNavigationProps) {
   const items: Array<{ page: Page; label: string; icon: string }> = [
-    { page: 'dashboard', label: 'Inicio', icon: 'LayoutDashboard' },
-    { page: 'planning', label: 'Agenda', icon: 'CalendarDays' },
+    { page: 'dashboard', label: user.role === 'Enfermería' ? 'Hoy' : 'Resumen', icon: 'LayoutDashboard' },
+    user.role === 'Enfermería' ? { page: 'training', label: 'Aprender', icon: 'BookOpen' } : { page: 'planning', label: 'Agenda', icon: 'CalendarDays' },
     { page: 'records', label: 'Historial', icon: 'ClipboardCheck' },
   ];
   return (

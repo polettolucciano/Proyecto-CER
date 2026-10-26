@@ -6,5 +6,6 @@ import './styles/tokens.css';
 import './styles.css';
 import './premium.css';
 import './readability.css';
+import './styles/workflows.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<AppErrorBoundary><AppProvider><App /></AppProvider></AppErrorBoundary>);

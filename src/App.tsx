@@ -128,7 +128,7 @@ export default function App() {
         <footer className="app-footer"><span>Centro de Enfermedades Renales</span><span>Prototipo frontend · Datos de demostración</span></footer>
       </div>
 
-      <MobileNavigation currentPage={currentPage} onMenu={() => setSidebar(true)} onNavigate={navigate} onNewRecord={() => actions.newRecord()} />
+      <MobileNavigation user={user} currentPage={currentPage} onMenu={() => setSidebar(true)} onNavigate={navigate} onNewRecord={() => actions.newRecord()} />
 
       {dialog?.type === 'record' && <OperationalRecordForm initialModule={dialog.module} initialEquipment={dialog.equipmentId} task={dialog.task} sourceRecord={dialog.sourceRecord} onClose={closeDialog} />}
       {dialog?.type === 'record-detail' && <RecordDetail record={dialog.record} onClose={closeDialog} onCorrect={() => setDialog({ type: 'record', sourceRecord: dialog.record })} />}
