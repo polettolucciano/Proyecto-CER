@@ -5,6 +5,10 @@
 .secondary-navigation summary svg:last-child { margin-left:auto; }
 .secondary-navigation[open] summary { color:white;margin-bottom:8px; }
 .secondary-navigation summary:focus-visible,summary:focus-visible { outline:3px solid #57bbb6;outline-offset:-3px; }
+.demo-role-group h3 { padding:10px 9px 4px;font-size:12px;color:#60768d; }
+.legacy-demo-profiles { border-top:1px solid var(--border);margin-top:8px;padding-top:8px; }
+.legacy-demo-profiles>summary { padding:8px 9px;font-size:12px;color:#60768d;cursor:pointer; }
+.calendar-only .view-tabs { display:none; }
 .simple-home { display:flex;flex-direction:column;gap:24px; }
 .simple-home .page-heading { margin-bottom:0; }
 .simple-home .page-heading h1 { font-size:clamp(28px,3vw,38px); }
@@ -80,6 +84,12 @@
   .home-summary>button:nth-child(-n+2) { border-bottom:1px solid var(--border); }
 }
 @media(max-width:680px) {
+  .calendar-only .calendar-grid { min-width:0;grid-template-columns:repeat(7,minmax(0,1fr)); }
+  .calendar-only .calendar-day { min-height:104px;padding:5px 3px; }
+  .calendar-only .calendar-event { font-size:10px;padding:6px 3px;min-height:32px; }
+  .calendar-only .calendar-event i { display:none; }
+  .calendar-only .day-number,.calendar-only .weekday { font-size:11px; }
+  .calendar-only .calendar-more { font-size:10px;margin-left:0; }
   .simple-home { gap:20px; }
   .home-task { padding:16px;gap:10px;align-items:flex-start; }
   .home-task>.module-icon { display:none; }

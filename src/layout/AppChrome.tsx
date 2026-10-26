@@ -16,7 +16,7 @@ interface SidebarProps {
 
 export function Sidebar({ currentPage, location, overdue, open, user, onClose, onNavigate }: SidebarProps) {
   const primary = primaryNavigation(user);
-  const secondary = navigation.filter(item => !primary.includes(item.id) && canAccessPage(user, item.id));
+  const secondary = navigation.filter(item => !primary.includes(item.id) && canAccessPage(user, item.id) && (user.role === 'Administrador' || item.group !== 'Administración'));
   const links = (items: typeof navigation) => items.map(item => (
     <a key={item.id} href={`#${item.id}`} className={`nav-item ${currentPage === item.id ? 'active' : ''}`} aria-current={currentPage === item.id ? 'page' : undefined} onClick={() => onNavigate(item.id)}>
       <Icon name={item.icon} size={20} /><span>{pageLabel(item.id, user)}</span>
@@ -105,13 +105,14 @@ export function Topbar(props: TopbarProps) {
           {props.profileOpen && (
             <div className="profile-dropdown">
               <div className="dropdown-heading">Perfiles de demostración<small>La autorización real se implementará con el backend.</small></div>
-              {props.users.filter(item => item.active).map(item => (
+              {(['Administrador', 'Enfermería'] as const).map(role => <section className="demo-role-group" key={role} aria-label={`Probar rol ${role}`}><h3>{role}</h3>{props.users.filter(item => item.active && item.role === role).map(item => (
                 <button key={item.id} onClick={() => props.onProfileChange(item.id)}>
                   <Avatar initials={item.initials} className="tiny-avatar" />
-                  <span><strong>{item.name}</strong><small>{item.role}</small></span>
+                  <span><strong>{item.role}</strong><small>{item.name}</small></span>
                   {item.id === props.user.id && <Icon name="Check" size={16} />}
                 </button>
-              ))}
+              ))}</section>)}
+              {props.users.some(item => item.active && item.role === 'Supervisor') && <details className="legacy-demo-profiles"><summary>Otros perfiles existentes</summary>{props.users.filter(item => item.active && item.role === 'Supervisor').map(item => <button key={item.id} onClick={() => props.onProfileChange(item.id)}><Avatar initials={item.initials} className="tiny-avatar" /><span><strong>{item.role}</strong><small>{item.name}</small></span>{item.id === props.user.id && <Icon name="Check" size={16} />}</button>)}</details>}
             </div>
           )}
         </div>
@@ -131,7 +132,7 @@ interface MobileNavigationProps {
 export function MobileNavigation({ user, currentPage, onMenu, onNavigate, onNewRecord }: MobileNavigationProps) {
   const items: Array<{ page: Page; label: string; icon: string }> = [
     { page: 'dashboard', label: user.role === 'Enfermería' ? 'Hoy' : 'Resumen', icon: 'LayoutDashboard' },
-    user.role === 'Enfermería' ? { page: 'training', label: 'Aprender', icon: 'BookOpen' } : { page: 'planning', label: 'Agenda', icon: 'CalendarDays' },
+    { page: 'planning', label: 'Agenda', icon: 'CalendarDays' },
     { page: 'records', label: 'Historial', icon: 'ClipboardCheck' },
   ];
   return (

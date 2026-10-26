@@ -23,7 +23,7 @@ export const navigationGroups: NavigationItem['group'][] = ['Operación', 'Conoc
 
 /** Agrupación visual; los permisos siguen comprobándose por separado. */
 export function primaryNavigation(user: TeamUser): Page[] {
-  return user.role === 'Enfermería' ? ['dashboard', 'records', 'training'] : ['dashboard', 'planning', 'records', 'reports'];
+  return user.role === 'Enfermería' ? ['dashboard', 'planning', 'records', 'training'] : ['dashboard', 'planning', 'records', 'reports'];
 }
 
 export function pageLabel(page: Page, user: TeamUser) {
