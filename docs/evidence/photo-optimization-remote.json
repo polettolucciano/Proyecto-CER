@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-27",
+  "project": "pnqsvmtmkceznoswpgfz",
+  "fixture": "synthetic JPEG with texture, 3200x2400",
+  "result": "passed",
+  "originalBytes": 2028689,
+  "storedBytes": 477680,
+  "outputWidth": 2048,
+  "outputHeight": 1536,
+  "savingPercentRounded": 76,
+  "privateDownload": true,
+  "exifRemoved": true,
+  "idempotentRetry": true,
+  "otherModuleDenied": true,
+  "invalidImageDenied": true,
+  "directStorageUploadDenied": true,
+  "anonymousDenied": true,
+  "temporaryDataCleaned": true
+}

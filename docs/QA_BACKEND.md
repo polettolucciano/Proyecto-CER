@@ -1,5 +1,17 @@
 # QA de backend CER
 
+## Continuación remota — 27/10/2026
+
+Proyecto-CER (pnqsvmtmkceznoswpgfz) ya está vinculado. Se aplicaron las migraciones 20261026194345, 20261026194621 y 20261027034907. Consulta remota: 9 tablas CER en public, todas con RLS; bucket cer-evidence privado; sin política de inserción directa de fotos para usuarios del navegador.
+
+Verificaciones locales de esta continuación: 4 pruebas de procesamiento real de imágenes aprobadas; las 8 pruebas SQL pertinentes aprobadas; typecheck del frontend y del módulo de procesamiento aprobado; build correcto. Las 22 pruebas anteriores del frontend no se repitieron por no haber cambios en sus reglas.
+
+La primera preparación de un perfil técnico mediante REST administrativo fue rechazada por los grants explícitos del proyecto: no se ampliaron permisos para salvar ese error; la prueba pasó a usar el canal SQL administrativo. Se limpiaron esas cuentas temporales. Las primeras pruebas remotas del procesador detectaron problemas de inicio/empaquetado y no confirmaron la carga; no se presentan como éxito. La prueba posterior y sus resultados se registran en PHOTO_OPTIMIZATION.
+
+El asesor de seguridad informa dos avisos sobre la función public.rls_auto_enable, preexistente en el proyecto con RLS automático. No pertenece a las migraciones CER ni se modificó en esta tarea; revisar sus grants antes del lanzamiento. El conector MCP no tiene permiso sobre este proyecto; las operaciones autorizadas se realizaron con la CLI vinculada.
+
+Los apartados siguientes conservan la evidencia histórica del 26/10. Sus limitaciones sobre ausencia de proyecto/Docker ya no describen el estado actual; las pruebas de invitaciones, respaldos y restauración continúan pendientes.
+
 Fecha: 26/10/2026. Esta evidencia incluye el trabajo anterior a la pausa y su continuación. No hay proyecto remoto conectado. Las capturas de acceso usan una URL/key local de prueba sin servicio disponible; no demuestran un login exitoso.
 
 ## Verificaciones ejecutadas

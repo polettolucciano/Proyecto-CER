@@ -1,5 +1,9 @@
 # Seguridad CER — revisión de esta etapa
 
+Actualización 27/10/2026: el proyecto remoto está creado y tiene las tres migraciones aplicadas. Se verificó RLS en todas las tablas CER y el bucket privado. El nuevo procesador valida contenido binario, decodifica, limita recursos y recodifica antes de guardar; retira la subida directa para evitar bypass. La validación remota del flujo de fotos se registra en PHOTO_OPTIMIZATION. Los riesgos históricos sobre Auth/backup deben releerse con esta actualización; las pruebas de correo, recuperación y operación completa entre dispositivos siguen pendientes.
+
+El asesor remoto señala grants amplios de la función de infraestructura preexistente public.rls_auto_enable. Es un pendiente de revisión antes de producción; no se modificó esa configuración ajena a los cambios de fotos.
+
 Fecha: 26/10/2026. Alcance: Auth, persistencia, SQL/RLS, invitaciones, evidencias, configuración, dependencias y preparación de backups. Revisión local; no auditoría de un servicio desplegado. **No habilitado todavía para datos operativos reales.**
 
 ## Controles presentes en código

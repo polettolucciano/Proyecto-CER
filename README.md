@@ -9,7 +9,7 @@ Hay dos modos separados:
 - **demo** (predeterminado): datos de ejemplo en IndexedDB, solo en ese navegador; selector de roles para presentación.
 - **supabase**: adaptador, login, migraciones PostgreSQL, funciones transaccionales y políticas de Storage preparados en este repositorio. Exige una cuenta personal y configuración válida; no sustituye errores por datos de ejemplo.
 
-**Todavía no se creó ni conectó un proyecto remoto.** Los workflows de respaldo están desactivados. No están comprobados el correo de invitación, la persistencia entre dispositivos ni una restauración real. La versión publicada sigue siendo la demo hasta un despliegue autorizado.
+El proyecto remoto Proyecto-CER ya está vinculado y tiene las migraciones de estructura, Storage privado y optimización de fotografías aplicadas. La función de procesamiento está desplegada; consultar la evidencia actualizada en docs/PHOTO_OPTIMIZATION.md. Los workflows de respaldo siguen desactivados. Falta completar el primer administrador, los correos, los flujos operativos entre dispositivos y una restauración real. La versión publicada en Vercel sigue siendo la demo hasta un despliegue autorizado.
 
 ## Funcionalidades
 
@@ -45,6 +45,7 @@ Usar solo las comprobaciones relevantes para cada cambio. Las pruebas SQL emplea
 - [Variables de entorno](docs/ENVIRONMENT.md)
 - [Backups, Drive/R2 y recuperación](docs/BACKUPS.md)
 - [Despliegue, validación y reversión](docs/DEPLOYMENT.md)
+- [Optimización de fotografías y evidencia](docs/PHOTO_OPTIMIZATION.md)
 - [Evidencia de QA](docs/QA_BACKEND.md)
 - [Seguridad y riesgos pendientes](SECURITY.md)
 - [Decisiones y alcance de implementación](docs/BACKEND_IMPLEMENTATION.md)

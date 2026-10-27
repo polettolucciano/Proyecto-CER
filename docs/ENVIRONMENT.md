@@ -10,7 +10,11 @@
 
 Todo VITE_ queda visible en el bundle. Nunca introducir contraseñas, service_role, secret keys, OAuth, claves de cifrado ni credenciales de backups. Usar .env.local ignorado en desarrollo; configurar Vercel por entorno.
 
-## Edge Function cer-invite
+## Edge Functions
+
+cer-evidence usa las variables de Supabase suministradas por el runtime. `CER_APP_ORIGINS` es opcional para ajustar los orígenes exactos autorizados; ver PHOTO_OPTIMIZATION. No requiere nuevas variables VITE_.
+
+### cer-invite
 
 APP_ORIGIN: origen exacto autorizado. Variables SUPABASE_URL, SUPABASE_ANON_KEY y SUPABASE_SERVICE_ROLE_KEY disponibles exclusivamente en el entorno de la función. Nunca imprimirlas ni ponerlas en Git.
 

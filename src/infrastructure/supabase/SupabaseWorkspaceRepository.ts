@@ -24,12 +24,18 @@ export class SupabaseWorkspaceRepository implements WorkspaceRepository {
    const record=command.data as Workspace['records'][number];const photos:Attachment[]=[];
    for(const photo of record.photos){
     if(photo.storagePath){photos.push(photo);continue;}
-    const ext=({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'} as Record<string,string>)[photo.type];
-    if(!ext || photo.data.size>5242880)throw new Error('La foto no cumple el formato o tamaño permitido.');
-    const path=`${record.module}/${record.userId}/${this.pending.operationId}/${photo.id}.${ext}`;
-    const {error}=await supabase!.storage.from('cer-evidence').upload(path,photo.data,{contentType:photo.type,upsert:false});
-    if(error && error.message!=='The resource already exists')throw new Error('No se pudo subir la evidencia. Conservá el formulario.');
-    photos.push({...photo,storagePath:path});
+    if(!['image/jpeg','image/png','image/webp'].includes(photo.type) || photo.data.size>5242880)throw new Error('La foto no cumple el formato o tamaño permitido.');
+    const body=new FormData();
+    body.set('file',photo.data,photo.name);body.set('module',record.module);
+    body.set('operationId',this.pending.operationId);body.set('photoId',photo.id);
+    const {data:uploaded,error}=await supabase!.functions.invoke('cer-evidence',{body,timeout:90000});
+    if(error){
+     let message='No se pudo optimizar y subir la evidencia. Conservá el formulario.';
+     if(error.context instanceof Response){const response=await error.context.json().catch(()=>null);if(typeof response?.message==='string')message=response.message;}
+     throw new Error(message);
+    }
+    if(typeof uploaded?.path!=='string' || !uploaded.path.startsWith(`${record.module}/${record.userId}/${this.pending.operationId}/`) || uploaded.mime!=='image/webp')throw new Error('El servidor no confirmó una fotografía válida. Conservá el formulario.');
+    photos.push({...photo,name:photo.name.replace(/\.[^.]+$/,'').slice(0,180)+'.webp',type:'image/webp',storagePath:uploaded.path});
    }
    command.data={...record,createdAt:undefined,photos};
   }

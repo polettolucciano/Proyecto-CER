@@ -3,11 +3,17 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "overrides": {"exceljs": {"uuid": "11.1.1"}},
+  "overrides": {
+    "exceljs": {
+      "uuid": "11.1.1"
+    }
+  },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "typecheck": "tsc -b --pretty false",
-    "test": "vitest run src && node --test tests/backend.test.mjs tests/backups.test.mjs",
+    "test": "vitest run src tests/imageOptimization.test.ts && node --test tests/backend.test.mjs tests/backups.test.mjs",
+    "test:images": "vitest run tests/imageOptimization.test.ts",
+    "prepare:images": "node scripts/prepare-image-engine.mjs",
     "test:frontend": "vitest run src",
     "test:backend": "node --test tests/backend.test.mjs",
     "test:backups": "node --test tests/backups.test.mjs",
@@ -24,6 +30,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.12",
+    "@imagemagick/magick-wasm": "0.0.45",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "latest",

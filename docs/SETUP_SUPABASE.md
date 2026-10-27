@@ -1,5 +1,7 @@
 # Conectar Supabase — primero en pruebas
 
+Actualización 27/10/2026: Proyecto-CER (pnqsvmtmkceznoswpgfz) ya está creado, vinculado y con tres migraciones aplicadas. Las secciones 1–2 describen la preparación reproducible; no es necesario volver a crear ni resetear el proyecto. El siguiente paso de acceso operativo es configurar el primer administrador (sección 3). La función cer-evidence requiere el empaquetado documentado en PHOTO_OPTIMIZATION.
+
 ## 1. Crear el servicio
 
 Ingresar a [Supabase Dashboard](https://supabase.com/dashboard), crear un proyecto **CER Desarrollo**, elegir una región apropiada para Argentina y guardar la contraseña de base de datos en un gestor privado. Esperar a que termine la creación.

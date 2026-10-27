@@ -14,3 +14,4 @@ coverage/
 *.sql.gz
 rclone.conf
 age-identity*
+/supabase/functions/cer-evidence/wasm/

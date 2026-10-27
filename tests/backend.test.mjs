@@ -8,6 +8,7 @@ before(async()=>{
  db=new PGlite();await db.exec(`create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key,email text);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth,public to authenticated,anon;grant execute on function auth.uid() to authenticated,anon;create schema storage;create table storage.objects(bucket_id text,name text);create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);alter table storage.objects enable row level security;grant usage on schema storage to authenticated;grant select,insert,delete on storage.objects to authenticated;`);
  await db.exec(await readFile(new URL('../supabase/migrations/20261026194345_cer_backend.sql',import.meta.url),'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261026194621_cer_storage.sql',import.meta.url),'utf8'));
+ await db.exec(await readFile(new URL('../supabase/migrations/20261027034907_evidence_optimization.sql',import.meta.url),'utf8'));
  await db.query(`insert into auth.users values($1,'admin@example.test'),($2,'nurse@example.test'),($3,'inactive@example.test')`,[admin,nurse,inactive]);
  await db.query(`insert into cer_profiles(id,name,email,role,modules,active) values($1,'Admin','admin@example.test','Administrador','{}',true),($2,'Nurse','nurse@example.test','Enfermería',array['generator'],true),($3,'Inactive','inactive@example.test','Enfermería',array['generator'],false)`,[admin,nurse,inactive]);
 });
@@ -78,7 +79,9 @@ test('biblioteca pública solo publica material publicado',async()=>{
 });
 test('Storage: bucket privado, aislamiento de módulo y sin borrado de evidencia histórica',async()=>{
  const path=`generator/${nurse}/operation/photo.jpg`;
- await asUser(nurse,'insert into storage.objects values($1,$2)',['cer-evidence',path]);
+ await assert.rejects(()=>asUser(nurse,'insert into storage.objects values($1,$2)',['cer-evidence',path]),/row-level security/);
+ // La función de backend guarda el resultado con credenciales de servidor.
+ await db.query('insert into storage.objects values($1,$2)',['cer-evidence',path]);
  await assert.rejects(()=>asUser(nurse,'insert into storage.objects values($1,$2)',['cer-evidence',`loop/${nurse}/photo.jpg`]),/row-level security/);
  await db.query('insert into cer_attachments(record_id,path,name,mime) values($1,$2,$3,$4)',['r1',path,'photo.jpg','image/jpeg']);
  const deleted=await asUser(nurse,'delete from storage.objects where name=$1 returning name',[path]);assert.equal(deleted.length,0);

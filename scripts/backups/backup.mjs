@@ -1,4 +1,4 @@
-import {mkdtemp,writeFile,readFile,stat,copyFile,readdir,rm} from 'node:fs/promises';
+import {mkdtemp,writeFile,readFile,stat,readdir,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';import {join,resolve} from 'node:path';
 import {spawn} from 'node:child_process';import {createHash} from 'node:crypto';
 import {createReadStream} from 'node:fs';
@@ -25,7 +25,9 @@ async function generate(){
  await run(cli,['db','dump','--db-url',db,'--data-only','--use-copy','-x','storage.buckets_vectors,storage.vector_indexes','-f',join(dir,'data.sql')]);
  await run(cli,['db','dump','--db-url',db,'--schema','supabase_migrations','-f',join(dir,'history_schema.sql')]);
  await run(cli,['db','dump','--db-url',db,'--schema','supabase_migrations','--data-only','--use-copy','-f',join(dir,'history_data.sql')]);
- await copyFile('supabase/migrations/20261026194621_cer_storage.sql',join(dir,'storage_policies.sql'));
+ const storagePolicies=await readFile('supabase/migrations/20261026194621_cer_storage.sql','utf8');
+ const optimizationPolicy=await readFile('supabase/migrations/20261027034907_evidence_optimization.sql','utf8');
+ await writeFile(join(dir,'storage_policies.sql'),storagePolicies+'\n'+optimizationPolicy);
  const checks={};for(const name of await readdir(dir)){if((await stat(join(dir,name))).size<10)throw new Error('Dump vacío o incompleto.');checks[name]=await hash(join(dir,name));}
  await writeFile(join(dir,'checksums.json'),JSON.stringify(checks));
  const archive=join(dir,'backup.tar.gz');await run('tar',['-czf',archive,'-C',dir,...Object.keys(checks),'checksums.json']);await run('tar',['-tzf',archive],{capture:true});
