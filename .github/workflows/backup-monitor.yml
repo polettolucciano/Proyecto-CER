@@ -12,10 +12,13 @@ jobs:
     timeout-minutes: 10
     environment: cer-backups-monitor
     env:
+      CER_SOURCE_PROJECT_REF: ${{ vars.CER_SOURCE_PROJECT_REF }}
       CER_BACKUP_REMOTE: ${{ vars.CER_BACKUP_REMOTE }}
       RCLONE_CONFIG: ${{ runner.temp }}/rclone.conf
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
@@ -26,6 +29,9 @@ jobs:
       - run: node scripts/backups/backup.mjs monitor
       - if: vars.CER_STORAGE_BACKUP_ENABLED == 'true'
         run: node scripts/backups/storage.mjs monitor
+      - name: Limpiar credenciales temporales
+        if: always()
+        run: rm -f -- "$RCLONE_CONFIG"
       - name: Avisar fallo
         if: failure()
         env:

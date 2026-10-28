@@ -1,6 +1,6 @@
 # Conectar Supabase — primero en pruebas
 
-Actualización 27/10/2026: Proyecto-CER (pnqsvmtmkceznoswpgfz) ya está creado, vinculado y con tres migraciones aplicadas. Las secciones 1–2 describen la preparación reproducible; no es necesario volver a crear ni resetear el proyecto. El siguiente paso de acceso operativo es configurar el primer administrador (sección 3). La función cer-evidence requiere el empaquetado documentado en PHOTO_OPTIMIZATION.
+Actualización 28/10/2026: Proyecto-CER (pnqsvmtmkceznoswpgfz) ya está creado, vinculado y con tres migraciones aplicadas. Una cuarta migración de corrección HTTP de conflictos está preparada, no aplicada. Las secciones 1–2 describen la preparación reproducible; no es necesario volver a crear ni resetear el proyecto. El primer administrador y la activación del ingreso se pospusieron por decisión del usuario. La función cer-evidence requiere el empaquetado documentado en PHOTO_OPTIMIZATION. Consultar ESTADO_ENTREGA_2026-10-28 antes de activar nada.
 
 ## 1. Crear el servicio
 
@@ -15,16 +15,16 @@ Desde la carpeta del proyecto, con la CLI ya incluida:
 ```bash
 npx supabase login
 npx supabase link --project-ref REFERENCIA_DEL_PROYECTO_DE_PRUEBAS
-npx supabase db push --dry-run
+npx supabase db push --linked --skip-vault --dry-run
 ```
 
 El login abre autorización en tu navegador. Ingresar contraseñas únicamente en el prompt privado de la CLI. Revisar que la referencia corresponda a CER Desarrollo y que el proyecto esté vacío. Tras revisar el dry-run y autorizar ese destino:
 
 ```bash
-npx supabase db push
+npx supabase db push --linked --skip-vault
 ```
 
-Se aplican las dos migraciones de supabase/migrations: estructura/funciones y bucket privado/políticas. No cargan la demo. No ejecutar reset ni aplicar esto sobre un servicio activo. Si ya existen tablas CER, detenerse y comparar el historial antes de continuar.
+Se aplican solo las migraciones pendientes del directorio supabase/migrations. No cargan la demo. Revisar cada archivo mostrado en el dry-run antes de autorizarlo. No ejecutar reset ni aplicar esto sobre un servicio activo sin revisión. Si ya existen tablas CER, comparar el historial antes de continuar.
 
 ## 3. Auth y primer administrador
 

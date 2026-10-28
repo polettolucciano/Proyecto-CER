@@ -9,6 +9,7 @@ before(async()=>{
  await db.exec(await readFile(new URL('../supabase/migrations/20261026194345_cer_backend.sql',import.meta.url),'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261026194621_cer_storage.sql',import.meta.url),'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261027034907_evidence_optimization.sql',import.meta.url),'utf8'));
+ await db.exec(await readFile(new URL('../supabase/migrations/20261028231130_conflict_http_status.sql',import.meta.url),'utf8'));
  await db.query(`insert into auth.users values($1,'admin@example.test'),($2,'nurse@example.test'),($3,'inactive@example.test')`,[admin,nurse,inactive]);
  await db.query(`insert into cer_profiles(id,name,email,role,modules,active) values($1,'Admin','admin@example.test','Administrador','{}',true),($2,'Nurse','nurse@example.test','Enfermería',array['generator'],true),($3,'Inactive','inactive@example.test','Enfermería',array['generator'],false)`,[admin,nurse,inactive]);
 });
@@ -37,7 +38,7 @@ test('idempotencia, duplicados y conflicto optimista',async()=>{
  const cmd=[{...record('r2'),duplicateApproved:true}],op=crypto.randomUUID();const rev=(await db.query('select revision from cer_settings')).rows[0].revision;
  const a=await apply(nurse,cmd,{op,revision:rev});const b=await apply(nurse,cmd,{op,revision:rev});assert.deepEqual(a,b);
  await assert.rejects(()=>apply(nurse,[record('r3')]),/DUPLICATE_CONFIRMATION_REQUIRED/);
- await assert.rejects(()=>apply(admin,[equipment('CONFLICT','generator')],{revision:rev}),/VERSION_CONFLICT/);
+ await assert.rejects(()=>apply(admin,[equipment('CONFLICT','generator')],{revision:rev}),error=>error.code==='PT409' && /VERSION_CONFLICT/.test(error.message));
  assert.equal((await db.query(`select count(*)::int n from cer_records where id='r2'`)).rows[0].n,1);
 });
 test('rectificar y anular preserva originales; enfermería no puede rectificar',async()=>{

@@ -1,0 +1,24 @@
+{
+  "project": "pnqsvmtmkceznoswpgfz",
+  "executedAt": "2026-10-28T23:12:45.425Z",
+  "environment": "real-supabase-synthetic-fixtures",
+  "checks": {
+    "login": true,
+    "equipmentPersistence": true,
+    "rlsAndAdministrativePermissions": true,
+    "serverOwnedAuthorshipAndTime": true,
+    "crossSessionPersistence": true,
+    "requiredFieldsAndRollback": true,
+    "monthlyDueDate": true,
+    "idempotency": true,
+    "concurrentWrites": "PENDING_REMOTE_MIGRATION",
+    "historySurvivesPlanningEdits": true,
+    "correctionsAndVoidsPreserveOriginals": true,
+    "noDirectDeletion": true,
+    "auditTrail": true,
+    "deactivatedProfileBlocked": true,
+    "logoutAndAnonymousBlocked": true,
+    "temporaryDataCleaned": true
+  },
+  "result": "PARTIAL"
+}

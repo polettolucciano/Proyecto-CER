@@ -2,7 +2,8 @@ import {mkdtemp,writeFile,readFile,stat,readdir,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';import {join,resolve} from 'node:path';
 import {spawn} from 'node:child_process';import {createHash} from 'node:crypto';
 import {createReadStream} from 'node:fs';
-import {rotationCandidates,staleBackup,assertRestoreTarget} from './policy.mjs';
+import {rotationCandidates,staleBackup,assertRestoreTarget,validateManifest,assertRecoveryCounts} from './policy.mjs';
+import {dumpCounts,recoveryQuery} from './recovery.mjs';
 const mode=process.argv[2]??'generate';
 const temporaryDirectories=[];
 const required=name=>{const value=process.env[name];if(!value)throw new Error(`Falta ${name}`);return value;};
@@ -13,7 +14,7 @@ const remotePath=(folder,name)=>`${required('CER_BACKUP_REMOTE').replace(/\/$/,'
 async function remoteHash(path){return new Promise((ok,fail)=>{const h=createHash('sha256'),child=spawn('rclone',['cat',path],{stdio:['ignore','pipe','ignore']});child.stdout.on('data',b=>h.update(b));child.on('error',()=>fail(new Error('No se pudo verificar el objeto remoto.')));child.on('exit',code=>code===0?ok(h.digest('hex')):fail(new Error('Falló la verificación remota.')));});}
 async function manifests(folder='Diarios'){
  let files;try{files=JSON.parse(await run('rclone',['lsjson',remotePath(folder,'')],{capture:true}));}catch{throw new Error('No se pudo listar el destino.');}
- const result=[];for(const f of files.filter(f=>/^CER-\d{8}T\d{6}Z\.json$/.test(f.Name))){const m=JSON.parse(await run('rclone',['cat',remotePath(folder,f.Name)],{capture:true}));result.push({...m,manifest:f.Name});}return result;
+ const result=[];for(const f of files.filter(f=>/^CER-\d{8}T\d{6}Z\.json$/.test(f.Name))){const m=JSON.parse(await run('rclone',['cat',remotePath(folder,f.Name)],{capture:true}));validateManifest(m,f.Name,{source:required('CER_SOURCE_PROJECT_REF')});result.push({...m,manifest:f.Name});}return result;
 }
 async function generate(){
  const db=required('CER_BACKUP_DATABASE_URL'),recipient=required('CER_BACKUP_AGE_RECIPIENT');
@@ -23,6 +24,8 @@ async function generate(){
  await run(cli,['db','dump','--db-url',db,'--role-only','-f',join(dir,'roles.sql')]);
  await run(cli,['db','dump','--db-url',db,'-f',join(dir,'schema.sql')]);
  await run(cli,['db','dump','--db-url',db,'--data-only','--use-copy','-x','storage.buckets_vectors,storage.vector_indexes','-f',join(dir,'data.sql')]);
+ const expectedCounts=dumpCounts(await readFile(join(dir,'data.sql'),'utf8'));
+ await writeFile(join(dir,'recovery_counts.json'),JSON.stringify(expectedCounts));
  await run(cli,['db','dump','--db-url',db,'--schema','supabase_migrations','-f',join(dir,'history_schema.sql')]);
  await run(cli,['db','dump','--db-url',db,'--schema','supabase_migrations','--data-only','--use-copy','-f',join(dir,'history_data.sql')]);
  const storagePolicies=await readFile('supabase/migrations/20261026194621_cer_storage.sql','utf8');
@@ -35,7 +38,7 @@ async function generate(){
  const encryptedHash=await hash(file),size=(await stat(file)).size;
  const destination=remotePath('Diarios',name);await run('rclone',['copyto',file,destination,'--immutable']);
  if(await remoteHash(destination)!==encryptedHash)throw new Error('El respaldo remoto no coincide. No se rotarán copias.');
- const report={name,createdAt,size,sha256:encryptedHash,verified:true,verification:'archive-structure-and-remote-hash',source:required('CER_SOURCE_PROJECT_REF'),storageIncluded:false};
+ const report={name,createdAt,size,sha256:encryptedHash,verified:true,verification:'archive-structure-and-remote-hash',source:required('CER_SOURCE_PROJECT_REF'),expectedCounts,storageIncluded:false};
  const manifest=`CER-${stamp}.json`,manifestFile=join(dir,manifest);await writeFile(manifestFile,JSON.stringify(report,null,2));
  await run('rclone',['copyto',manifestFile,remotePath('Diarios',manifest),'--immutable']);
  if(createdAt.slice(8,10)==='01'){await run('rclone',['copyto',file,remotePath('Mensuales',name),'--immutable']);if(await remoteHash(remotePath('Mensuales',name))!==encryptedHash)throw new Error('No se pudo verificar la copia mensual.');await run('rclone',['copyto',manifestFile,remotePath('Mensuales',manifest),'--immutable']);}
@@ -52,22 +55,27 @@ async function rotate(){
  console.log('Rotación completada.');
 }
 async function restore(){
- const target=required('CER_RESTORE_DATABASE_URL');assertRestoreTarget(target,required('CER_BACKUP_DATABASE_URL'),required('CER_RESTORE_TEST_HOST'));
+ const target=required('CER_RESTORE_DATABASE_URL');assertRestoreTarget(target,required('CER_BACKUP_DATABASE_URL'),required('CER_RESTORE_TEST_HOST'),required('CER_SOURCE_PROJECT_REF'));
  if(required('CER_RESTORE_CONFIRM')!=='cer-test-only')throw new Error('Confirmación de entorno de pruebas requerida.');
  const file=resolve(required('CER_RESTORE_FILE')),manifest=JSON.parse(await readFile(required('CER_RESTORE_MANIFEST'),'utf8'));
+ validateManifest(manifest,manifest.name?.replace(/\.tar\.gz\.age$/,'.json'),{source:required('CER_SOURCE_PROJECT_REF')});
  if(await hash(file)!==manifest.sha256)throw new Error('El archivo no coincide con su manifiesto.');
  const dir=await mkdtemp(join(tmpdir(),'cer-restore-')),archive=join(dir,'backup.tar.gz');
  temporaryDirectories.push(dir);
  await run('age',['--decrypt','-i',required('CER_RESTORE_AGE_IDENTITY'),'-o',archive,file]);
  const names=(await run('tar',['-tzf',archive],{capture:true})).trim().split('\n');
- const allowed=['roles.sql','schema.sql','data.sql','history_schema.sql','history_data.sql','storage_policies.sql','checksums.json'];
+ const allowed=['roles.sql','schema.sql','data.sql','history_schema.sql','history_data.sql','storage_policies.sql','recovery_counts.json','checksums.json'];
  if(names.some(n=>!allowed.includes(n)) || !allowed.every(n=>names.includes(n)))throw new Error('Contenido de archivo inesperado.');
  const types=(await run('tar',['-tvzf',archive],{capture:true})).trim().split('\n');if(types.some(line=>line[0]!=='-'))throw new Error('El archivo contiene enlaces o tipos no permitidos.');
  await run('tar',['-xzf',archive,'-C',dir]);const checks=JSON.parse(await readFile(join(dir,'checksums.json'),'utf8'));
  for(const name of allowed.filter(n=>n!=='checksums.json'))if(checks[name]!==await hash(join(dir,name)))throw new Error('Checksum interior inválido.');
- const existing=await run('psql',[target,'-At','-c',"select coalesce(to_regclass('public.cer_records')::text,'')"],{capture:true});if(existing.trim())throw new Error('El destino ya tiene datos CER. Se requiere otro entorno vacío.');
+ const expectedCounts=JSON.parse(await readFile(join(dir,'recovery_counts.json'),'utf8'));
+ const existing=await run('psql',[target,'-At','-c',"select (exists(select 1 from pg_tables where schemaname='public' and tablename like 'cer_%') or exists(select 1 from auth.users))::text"],{capture:true});if(existing.trim()!=='false')throw new Error('El destino ya tiene datos CER o usuarios Auth. Se requiere otro entorno vacío.');
  await run('psql',[target,'--single-transaction','--set','ON_ERROR_STOP=1','-f',join(dir,'roles.sql'),'-f',join(dir,'schema.sql'),'-c','SET session_replication_role = replica','-f',join(dir,'data.sql'),'-f',join(dir,'history_schema.sql'),'-f',join(dir,'history_data.sql'),'-f',join(dir,'storage_policies.sql')]);
- const counts=await run('psql',[target,'-At','-c',"select json_build_object('equipment',(select count(*) from cer_equipment),'records',(select count(*) from cer_records),'profiles',(select count(*) from cer_profiles),'audit',(select count(*) from cer_audit_events),'orphan_records',(select count(*) from cer_records r left join cer_equipment e on e.id=r.equipment_id where e.id is null))"],{capture:true});
- console.log(JSON.stringify({restored:true,targetHost:required('CER_RESTORE_TEST_HOST'),counts:JSON.parse(counts),storageRestored:false}));
+ const counts=JSON.parse(await run('psql',[target,'-At','-c',recoveryQuery],{capture:true}));
+ assertRecoveryCounts(counts,expectedCounts);
+ const report={restored:true,verifiedAt:new Date().toISOString(),source:manifest.source,backup:manifest.name,targetHost:required('CER_RESTORE_TEST_HOST'),counts,storageRestored:false,applicationLoginTested:false};
+ if(process.env.CER_RESTORE_REPORT)await writeFile(resolve(process.env.CER_RESTORE_REPORT),JSON.stringify(report,null,2),{mode:0o600});
+ console.log(JSON.stringify(report));
 }
-try{if(mode==='generate')await generate();else if(mode==='rotate')await rotate();else if(mode==='monitor'){const files=await manifests();if(staleBackup(files))throw new Error('No hay una copia correcta en las últimas 36 horas.');console.log('Backup reciente verificado.');}else if(mode==='list')console.log(JSON.stringify(await manifests(),null,2));else if(mode==='restore')await restore();else throw new Error('Comando desconocido.');}catch(error){console.error(error.message);process.exitCode=1;}finally{for(const dir of temporaryDirectories){try{await rm(dir,{recursive:true,force:true});}catch{console.error('No se pudo limpiar el directorio temporal privado.');process.exitCode=1;}}}
+try{if(mode==='generate')await generate();else if(mode==='rotate')await rotate();else if(mode==='monitor'){const files=await manifests();if(staleBackup(files))throw new Error('No hay una copia correcta en las últimas 36 horas.');const newest=files.sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt))[0];if(await remoteHash(remotePath('Diarios',newest.name))!==newest.sha256)throw new Error('El último respaldo está ausente o dañado.');console.log('Backup reciente y bytes remotos verificados.');}else if(mode==='list')console.log(JSON.stringify(await manifests(),null,2));else if(mode==='restore')await restore();else throw new Error('Comando desconocido.');}catch(error){console.error(error.message);process.exitCode=1;}finally{for(const dir of temporaryDirectories){try{await rm(dir,{recursive:true,force:true});}catch{console.error('No se pudo limpiar el directorio temporal privado.');process.exitCode=1;}}}

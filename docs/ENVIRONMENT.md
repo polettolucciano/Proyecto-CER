@@ -39,7 +39,7 @@ RCLONE_CONFIG_STORAGE incluye fuente de solo lectura y destino de respaldo. READ
 
 ## Restauración manual aislada
 
-CER_RESTORE_DATABASE_URL, CER_RESTORE_TEST_HOST, CER_BACKUP_DATABASE_URL (identifica origen), CER_RESTORE_FILE, CER_RESTORE_MANIFEST, CER_RESTORE_AGE_IDENTITY (ruta), CER_RESTORE_CONFIRM=cer-test-only.
+CER_RESTORE_DATABASE_URL, CER_RESTORE_TEST_HOST, CER_BACKUP_DATABASE_URL (identifica origen), CER_SOURCE_PROJECT_REF, CER_RESTORE_FILE, CER_RESTORE_MANIFEST, CER_RESTORE_AGE_IDENTITY (ruta), CER_RESTORE_CONFIRM=cer-test-only. CER_RESTORE_REPORT permite guardar el informe privado en una ruta elegida fuera del repositorio.
 
 Para archivos: CER_STORAGE_REMOTE (origen que debe diferir), CER_STORAGE_RESTORE_REMOTE, CER_STORAGE_RESTORE_APPROVED (destino exacto autorizado), CER_STORAGE_RESTORE_FILE y CER_STORAGE_RESTORE_MANIFEST. Reutiliza identidad age y confirmación de pruebas.
 

@@ -1,9 +1,11 @@
 # Respaldos CER — preparación, activación y recuperación
 
-Estado: código preparado; no hay proyecto origen ni destino elegido. No existe todavía un backup remoto ni una restauración remota comprobada. No activar rotación hasta completar la primera restauración y el respaldo de Storage.
+Estado al 28/10/2026: origen confirmado Proyecto-CER (`pnqsvmtmkceznoswpgfz`), destino confirmado Google Drive personal. Faltan OAuth de Drive y los secretos de GitHub. No existe todavía un backup remoto ni una restauración remota comprobada. No activar rotación hasta completar la primera restauración y el respaldo de Storage. Ver los pasos concretos en [ACTIVACION_DRIVE.md](ACTIVACION_DRIVE.md).
 
 ## Diseño
 El workflow diario genera roles, estructura, datos e historial de migraciones con la CLI oficial de Supabase fijada en package-lock. Incluye las políticas CER de Storage para recrearlas en un proyecto vacío. Comprime con tar/gzip y cifra con age usando solo la clave pública. Verifica estructura del archivo y hashes, sube el cifrado con rclone y vuelve a leerlo para comparar SHA-256. Solo después publica su manifiesto de éxito.
+
+Los datos de CER y Auth salen de una única ejecución de `pg_dump --data-only`, con su snapshot coherente. No aplicar cambios de esquema mientras se genera una copia: esquema, roles e historial se exportan en pasos separados. Los conteos de referencia se calculan del propio archivo COPY, no de una consulta posterior que podría ver otros datos. El monitor vuelve a leer y comprobar el hash remoto; un JSON que diga “verified” no basta.
 
 La verificación estructural NO es una restauración. Se requiere restaurar periódicamente en un Supabase de pruebas vacío de versión compatible. No contiene Vault ni claves de cifrado externas: CER no los utiliza. Si se agregan, revisar el alcance según la documentación oficial.
 
@@ -34,7 +36,7 @@ Ejecutar scripts solo desde un entorno confiable con age, tar, rclone, psql y la
 1. `node scripts/backups/backup.mjs list` muestra nombres y fechas; descargar el archivo y su JSON con rclone a una carpeta privada.
 2. Crear un Supabase **de pruebas vacío** compatible. No usar el proyecto activo ni un destino con tablas CER.
 3. Definir localmente `CER_RESTORE_DATABASE_URL`, `CER_RESTORE_TEST_HOST` (hostname exacto), `CER_BACKUP_DATABASE_URL` (origen), `CER_RESTORE_FILE`, `CER_RESTORE_MANIFEST`, `CER_RESTORE_AGE_IDENTITY` (ruta privada), `CER_RESTORE_CONFIRM=cer-test-only`.
-4. `node scripts/backups/backup.mjs restore`: comprueba hash exterior, descifra, verifica rutas y hashes internos, rechaza origen/destino equivalentes y destinos no vacíos; restaura con ON_ERROR_STOP en una transacción. Emite conteos de equipos, registros, usuarios y auditoría, y huérfanos.
+4. `node scripts/backups/backup.mjs restore`: comprueba hash exterior, descifra, verifica rutas y hashes internos, rechaza origen/destino equivalentes y destinos con tablas CER o cuentas Auth; restaura con ON_ERROR_STOP en una transacción. Compara conteos de equipos, tareas, registros, perfiles, cuentas Auth, auditoría, adjuntos y capacitaciones contra el snapshot. Rechaza referencias huérfanas. Definir `CER_SOURCE_PROJECT_REF` y, opcionalmente, `CER_RESTORE_REPORT` para guardar un informe privado.
 5. Comparar conteos, valores, fechas y usuarios con la referencia del backup; probar login, RLS y flujos de aplicación con cuentas de prueba. Conservar el informe en Registros-de-verificacion. No declarar recuperación completa solo por los conteos.
 6. Tras la primera prueba satisfactoria, habilitar `CER_RESTORE_TESTED=true`; valorar activar rotación.
 

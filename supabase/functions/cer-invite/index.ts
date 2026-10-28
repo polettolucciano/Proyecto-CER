@@ -12,7 +12,7 @@ Deno.serve(async(request:Request)=>{
   const {data:profile}=await caller.from('cer_profiles').select('role,active').eq('id',identity.user.id).single();
   if(!profile?.active || profile.role!=='Administrador')return response(403,'Solo Administración puede invitar integrantes.');
   const body=await request.text();if(body.length>20000)return response(400,'Solicitud demasiado grande.');
-  const input=JSON.parse(body);
+  let input;try{input=JSON.parse(body);}catch{return response(400,'La solicitud no contiene datos válidos.');}
   const modules=['generator','osmosis','loop','crash','fumigation','electrical','rooms','general'];
   if(!input || typeof input.name!=='string' || input.name.trim().length<2 || input.name.trim().length>150 || typeof input.email!=='string' || input.email.length>254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email) || !['Administrador','Enfermería'].includes(input.role) || !Array.isArray(input.modules) || input.modules.length>8 || input.modules.some((m:unknown)=>typeof m!=='string' || !modules.includes(m)) || (input.role!=='Administrador' && !input.modules.length))return response(400,'Revisá los datos.');
   const admin=createClient(url,secret,{auth:{persistSession:false}});
@@ -25,7 +25,7 @@ Deno.serve(async(request:Request)=>{
    if(readError)break;
    const {error:saveError}=await caller.rpc('cer_apply_changes',{p_operation_id:operationId,p_expected_revision:settings?.revision,p_commands:[{kind:'profile',data:{id:invited.user.id,name:input.name.trim(),role:input.role,modules:input.modules,active:true}}]});
    if(!saveError)return response(200,'Invitación enviada y perfil creado.');
-   if(saveError.code!=='40001')break;
+   if(!['PT409','40001'].includes(saveError.code))break;
   }
   return response(409,'La cuenta fue invitada pero su perfil requiere completar la configuración desde Supabase. No tiene acceso operativo todavía. Consultá la guía SETUP_SUPABASE.');
  }catch{return response(500,'No se pudo completar la invitación.');}

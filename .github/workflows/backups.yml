@@ -15,13 +15,14 @@ jobs:
     timeout-minutes: 45
     environment: cer-backups
     env:
-      CER_BACKUP_DATABASE_URL: ${{ secrets.CER_BACKUP_DATABASE_URL }}
       CER_BACKUP_AGE_RECIPIENT: ${{ vars.CER_BACKUP_AGE_RECIPIENT }}
       CER_BACKUP_REMOTE: ${{ vars.CER_BACKUP_REMOTE }}
       CER_SOURCE_PROJECT_REF: ${{ vars.CER_SOURCE_PROJECT_REF }}
       RCLONE_CONFIG: ${{ runner.temp }}/rclone.conf
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
@@ -33,6 +34,11 @@ jobs:
           RCLONE_CONFIG_TEXT: ${{ secrets.RCLONE_CONFIG_CREATE }}
         run: node -e 'require("fs").writeFileSync(process.env.RCLONE_CONFIG,process.env.RCLONE_CONFIG_TEXT,{mode:0o600})'
       - run: node scripts/backups/backup.mjs generate
+        env:
+          CER_BACKUP_DATABASE_URL: ${{ secrets.CER_BACKUP_DATABASE_URL }}
+      - name: Limpiar credenciales temporales
+        if: always()
+        run: rm -f -- "$RCLONE_CONFIG"
       - name: Avisar fallo
         if: failure()
         env:
@@ -47,10 +53,13 @@ jobs:
     timeout-minutes: 20
     environment: cer-backup-rotation
     env:
+      CER_SOURCE_PROJECT_REF: ${{ vars.CER_SOURCE_PROJECT_REF }}
       CER_BACKUP_REMOTE: ${{ vars.CER_BACKUP_REMOTE }}
       RCLONE_CONFIG: ${{ runner.temp }}/rclone.conf
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
@@ -61,3 +70,11 @@ jobs:
       - run: node scripts/backups/backup.mjs rotate
       - if: vars.CER_STORAGE_BACKUP_ENABLED == 'true'
         run: node scripts/backups/storage.mjs rotate
+      - name: Avisar fallo de rotación
+        if: failure()
+        env:
+          CER_ALERT_WEBHOOK: ${{ secrets.CER_ALERT_WEBHOOK }}
+        run: node scripts/backups/notify.mjs
+      - name: Limpiar credenciales temporales
+        if: always()
+        run: rm -f -- "$RCLONE_CONFIG"
