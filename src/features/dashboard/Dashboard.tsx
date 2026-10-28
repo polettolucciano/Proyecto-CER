@@ -12,10 +12,9 @@ function Worklist({ title, tasks, actions, operational }: { title: string; tasks
     <header className="panel-heading"><h2>{title} <span className="count-pill">{tasks.length}</span></h2></header>
     {tasks.length ? tasks.map(task => {
       const equipment = data.equipment.find(item => item.id === task.equipmentId);
-      const owner = data.users.find(item => item.id === task.assignedTo);
       return <div className="home-task" key={task.id}>
         <ModuleIcon module={task.module} small />
-        <div className="home-task-copy"><button className="task-title-link" onClick={() => actions.viewTask(task)}>{task.title}</button><small>{equipment?.name ?? 'Equipo sin identificar'}{!operational && ` · ${owner?.name ?? 'Sin asignar'}`}</small><span className="home-task-meta"><Badge>{taskStatus(task, data.settings.advanceDays)}</Badge><span>{formatDate(task.due, { day: 'numeric', month: 'short' })}</span></span></div>
+        <div className="home-task-copy"><button className="task-title-link" onClick={() => actions.viewTask(task)}>{task.title}</button><small>{equipment?.name ?? 'Equipo sin identificar'}{!operational && ` · ${'Enfermería'}`}</small><span className="home-task-meta"><Badge>{taskStatus(task, data.settings.advanceDays)}</Badge><span>{formatDate(task.due, { day: 'numeric', month: 'short' })}</span></span></div>
         <button className="button secondary small" aria-label={`Registrar ${task.title}`} onClick={() => actions.newRecord(task.module, task)}>Registrar<Icon name="ArrowRight" size={16} /></button>
       </div>;
     }) : <Empty icon="CheckCheck" title="Sin controles pendientes en esta lista" description="Podés consultar la agenda o registrar un control fuera de programación." />}
@@ -27,17 +26,17 @@ export function Dashboard({ actions }: { actions: AppActions }) {
   const visible = visibleData(data, user);
   const date = today();
   const operational = user.role === 'Enfermería';
-  const activeTasks = visible.tasks.filter(task => task.active && (!operational || task.assignedTo === user.id)).sort((a, b) => a.due.localeCompare(b.due));
+  const activeTasks = visible.tasks.filter(task => task.active).sort((a, b) => a.due.localeCompare(b.due));
   const pending = activeTasks.filter(task => task.due <= date);
   const upcoming = activeTasks.filter(task => task.due > date && task.due <= addDays(date, data.settings.advanceDays));
-  const records = visible.records.filter(record => record.status === 'active' && (!operational || record.userId === user.id));
+  const records = visible.records.filter(record => record.status === 'active');
   const recent = records.filter(record => record.date >= addDays(date, -30) && record.date <= date);
   const attention = recent.filter(record => record.result === 'attention');
   const recentRecords = [...records].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 4);
   const controls = modules.filter(module => module.defined && visible.equipment.some(item => item.module === module.id));
   const displayDate = formatDate(date, { weekday: 'long', day: 'numeric', month: 'long' });
   return <div className="simple-home">
-    <PageHeader title={operational ? 'Tus controles de hoy' : 'Resumen del centro'} description={`${displayDate.charAt(0).toUpperCase() + displayDate.slice(1)} · ${operational ? 'Tareas asignadas a vos y acceso a tus controles.' : 'Pendientes del equipo y resultados de los últimos 30 días.'}`}>
+    <PageHeader title={operational ? 'Controles de hoy' : 'Resumen del centro'} description={`${displayDate.charAt(0).toUpperCase() + displayDate.slice(1)} · ${operational ? 'Controles compartidos: cualquier integrante de Enfermería puede realizarlos.' : 'Pendientes del equipo y resultados de los últimos 30 días.'}`}>
       {!operational && <button className="button secondary" onClick={() => actions.navigate('reports')}><Icon name="FileSpreadsheet" size={17} />Ver informes</button>}
       <button className="button primary" onClick={() => actions.newRecord()}><Icon name="Plus" size={18} />Registrar control</button>
     </PageHeader>
@@ -60,6 +59,6 @@ export function Dashboard({ actions }: { actions: AppActions }) {
       </aside>
     </div>
     {!operational && <section id="home-observations" className="panel home-observations"><header className="panel-heading"><div><h2>Controles con observaciones</h2><p>Registros vigentes de los últimos 30 días para revisar con el equipo.</p></div></header>{attention.length ? <RecordsTable records={[...attention].sort((a, b) => b.date.localeCompare(a.date))} actions={actions} compact /> : <Empty icon="CheckCircle2" title="Sin observaciones registradas en este período" description="Los controles con observaciones aparecerán aquí." />}</section>}
-    <section className="panel"><header className="panel-heading"><div><h2>{operational ? 'Tus últimos registros' : 'Últimos registros del equipo'}</h2></div><button className="text-button" onClick={() => actions.navigate('records')}>Ver historial<Icon name="ArrowRight" size={16} /></button></header><RecordsTable records={recentRecords} actions={actions} compact /></section>
+    <section className="panel"><header className="panel-heading"><div><h2>{operational ? 'Últimos registros del equipo' : 'Últimos registros del equipo'}</h2></div><button className="text-button" onClick={() => actions.navigate('records')}>Ver historial<Icon name="ArrowRight" size={16} /></button></header><RecordsTable records={recentRecords} actions={actions} compact /></section>
   </div>;
 }

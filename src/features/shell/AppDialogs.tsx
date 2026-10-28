@@ -11,7 +11,6 @@ import type { Equipment, MaintenanceRecord, Task } from '../../types';
 export function TaskDetail({ task, actions, onClose }: { task: Task; actions: AppActions; onClose: () => void }) {
   const { data, user } = useApp();
   const equipment = data.equipment.find(item => item.id === task.equipmentId);
-  const owner = data.users.find(item => item.id === task.assignedTo);
   return (
     <Modal title="Detalle de la tarea" subtitle={moduleById(task.module).name} onClose={onClose}>
       <div className="modal-body">
@@ -23,7 +22,7 @@ export function TaskDetail({ task, actions, onClose }: { task: Task; actions: Ap
           <div><span>Equipo o sector</span><strong>{equipment?.name ?? 'Sin equipo'}</strong></div>
           <div><span>Ubicación</span><strong>{equipment?.location ?? '—'}</strong></div>
         </div>
-        <div className="responsible-note"><Avatar initials={owner?.initials ?? '—'} /><div><small>Responsable asignado</small><strong>{owner?.name ?? 'Sin asignar'}</strong></div></div>
+        <div className="responsible-note"><Avatar initials="EN" /><div><small>Equipo responsable</small><strong>Enfermería · cualquier integrante</strong></div></div>
         {task.notes && <section className="detail-section"><h3>Indicaciones</h3><p className="preserve-lines">{task.notes}</p></section>}
         <div className="inline-notice soft"><Icon name="RefreshCw" /><span>Al registrar este control, la próxima fecha se actualizará según la periodicidad configurada.</span></div>
       </div>

@@ -3,6 +3,17 @@ import { createSeed } from './data';
 import { normalizeWorkspace } from './workspace';
 
 describe('migración del espacio de trabajo', () => {
+  it('unifica el acceso de Enfermería en la demo sin cambiar autores ni asignaciones históricas', () => {
+    const workspace = createSeed();
+    const nurse = workspace.users.find(user => user.role === 'Enfermería')!;
+    nurse.modules = ['osmosis'];
+    const migrated = normalizeWorkspace(workspace)!;
+    expect(migrated.users.find(user => user.id === nurse.id)?.modules).toContain('generator');
+    expect(migrated.records.map(record => record.userId)).toEqual(workspace.records.map(record => record.userId));
+    expect(migrated.tasks.map(task => task.assignedTo)).toEqual(workspace.tasks.map(task => task.assignedTo));
+    expect(workspace.users.filter(user => user.role === 'Enfermería')).toHaveLength(1);
+  });
+
   it('migra registros anteriores sin perder contenido', () => {
     const legacy = createSeed() as unknown as { version: number; auditEvents?: unknown; records: Array<Record<string, unknown>> };
     legacy.version = 1;

@@ -26,7 +26,6 @@ export function SettingsPage() {
         <form onSubmit={submit}>
           <div className="settings-body">
             <Field label="Nombre del centro"><input disabled={!admin || submitting} required value={draft.organization} onChange={event => setDraft(current => ({ ...current, organization: event.target.value }))} /></Field>
-            <Field label="Sede"><input disabled={!admin || submitting} required value={draft.location} onChange={event => setDraft(current => ({ ...current, location: event.target.value }))} /></Field>
             <Field label="Anticipación de próximos vencimientos" hint="Define cuántos días antes aparece el estado “Próximo” en el tablero."><select disabled={!admin || submitting} value={draft.advanceDays} onChange={event => setDraft(current => ({ ...current, advanceDays: Number(event.target.value) }))}>{[3, 7, 14, 30].map(days => <option key={days} value={days}>{days} días</option>)}</select></Field>
             {saveError && <p className="form-error" role="alert">{saveError}</p>}
           </div>

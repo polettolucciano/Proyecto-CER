@@ -1,5 +1,6 @@
 import type { AuditAction, AuditEvent, MaintenanceRecord, Workspace } from './types';
 import { safeHttpsUrl, uid } from './domain';
+import { modules } from './modules/catalog';
 
 type LegacyWorkspace = Omit<Workspace, 'version' | 'auditEvents' | 'records'> & {
   version?: number;
@@ -19,7 +20,9 @@ export function normalizeWorkspace(value: unknown): Workspace | undefined {
   return {
     ...candidate,
     version: 2,
-    users: candidate.users.map(user => ({ ...user, role: normalizeRole(user.role) })) as Workspace['users'],
+    // Only used for local demo data. Preserve historical authors while giving
+    // the single nursing demo profile access to all maintenance modules.
+    users: candidate.users.map(user => ({ ...user, role: normalizeRole(user.role), ...(normalizeRole(user.role) === 'Enfermería' ? { modules: modules.map(module => module.id) } : {}) })) as Workspace['users'],
     records: candidate.records.map(record => ({
       ...record,
       status: record.status ?? 'active',

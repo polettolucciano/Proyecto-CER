@@ -107,7 +107,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Ir al contenido</a>
-      <Sidebar currentPage={currentPage} location={data.settings.location} overdue={overdue} open={sidebar} user={user} onClose={() => setSidebar(false)} onNavigate={navigate} />
+      <Sidebar currentPage={currentPage} overdue={overdue} open={sidebar} user={user} onClose={() => setSidebar(false)} onNavigate={navigate} />
       <div className="app-main">
         <Topbar currentPage={currentPage} overdue={overdue} profileOpen={profile} user={user} users={data.users} onMenu={() => setSidebar(true)} onNotifications={() => setDialog({ type: 'notifications' })} onProfileChange={changeProfile} onProfileToggle={() => setProfile(value => !value)} onSearch={() => setDialog({ type: 'search' })} />
         <div className="preview-strip premium-preview" role="status">
