@@ -1,6 +1,6 @@
 # Conectar Supabase — primero en pruebas
 
-Actualización 28/10/2026: Proyecto-CER (pnqsvmtmkceznoswpgfz) ya está creado, vinculado y con tres migraciones aplicadas. Una cuarta migración de corrección HTTP de conflictos está preparada, no aplicada. Las secciones 1–2 describen la preparación reproducible; no es necesario volver a crear ni resetear el proyecto. El primer administrador y la activación del ingreso se pospusieron por decisión del usuario. La función cer-evidence requiere el empaquetado documentado en PHOTO_OPTIMIZATION. Consultar ESTADO_ENTREGA_2026-10-28 antes de activar nada.
+Actualización 28/10/2026: Proyecto-CER (pnqsvmtmkceznoswpgfz) ya está creado, vinculado y con cuatro migraciones aplicadas. La corrección HTTP de conflictos fue autorizada y verificada remotamente con respuesta PT409. Las secciones 1–2 describen la preparación reproducible; no es necesario volver a crear ni resetear el proyecto. El primer administrador y la activación del ingreso se pospusieron por decisión del usuario. La función cer-evidence requiere el empaquetado documentado en PHOTO_OPTIMIZATION. Consultar ESTADO_ENTREGA_2026-10-28 antes de activar nada.
 
 ## 1. Crear el servicio
 

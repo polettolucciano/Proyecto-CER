@@ -1,6 +1,6 @@
 # Despliegue y reversión
 
-Estado al 28/10/2026: la web principal está publicada en modo demostración. Supabase tiene tres migraciones aplicadas y el optimizador activo. Esta etapa prepara una cuarta migración y el servicio de invitaciones, pendientes de aprobación de aplicación/despliegue. Por decisión del usuario, se mantiene la inspección sin ingreso y no se activa la base real en la web pública. No se modificó Vercel durante esta etapa.
+Estado al 28/10/2026: la web principal está publicada en modo demostración. Supabase tiene cuatro migraciones aplicadas y el optimizador activo. La corrección de conflictos fue aplicada con autorización expresa y pasó la prueba concurrente real. El servicio de invitaciones sigue pendiente de despliegue/configuración. Por decisión del usuario, se mantiene la inspección sin ingreso y no se activa la base real en la web pública. No se modificó Vercel durante esta etapa.
 
 ## Preview primero
 

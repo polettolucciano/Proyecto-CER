@@ -1,6 +1,6 @@
 {
   "project": "pnqsvmtmkceznoswpgfz",
-  "executedAt": "2026-10-28T23:12:45.425Z",
+  "executedAt": "2026-10-28T23:19:55.037Z",
   "environment": "real-supabase-synthetic-fixtures",
   "checks": {
     "login": true,
@@ -11,7 +11,7 @@
     "requiredFieldsAndRollback": true,
     "monthlyDueDate": true,
     "idempotency": true,
-    "concurrentWrites": "PENDING_REMOTE_MIGRATION",
+    "concurrentWritesNoOverwrite": true,
     "historySurvivesPlanningEdits": true,
     "correctionsAndVoidsPreserveOriginals": true,
     "noDirectDeletion": true,
@@ -20,5 +20,5 @@
     "logoutAndAnonymousBlocked": true,
     "temporaryDataCleaned": true
   },
-  "result": "PARTIAL"
+  "result": "OK"
 }

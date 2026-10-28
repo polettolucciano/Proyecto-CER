@@ -20,7 +20,7 @@ Solo Administración puede modificar perfiles. Desactivar a quien ya no use el s
 
 La versión real muestra “Sesión personal · Datos del centro”; la demo muestra “Demostración”. Después de un registro, actualizar la página y consultar el historial por equipo desde otra sesión autorizada. Si falla el guardado, conservar el formulario, leer el aviso y no cerrar la página ni repetir clics rápidamente.
 
-Si aparece que otra persona modificó datos, actualizar la información, revisar el historial y confirmar el formulario antes de intentarlo otra vez. La corrección HTTP de este aviso está preparada en una migración pendiente; no habilitar la operación clínica hasta verificarla remotamente.
+Si aparece que otra persona modificó datos, actualizar la información, revisar el historial y confirmar el formulario antes de intentarlo otra vez. La corrección HTTP de este aviso está aplicada y verificada: una revisión desactualizada devuelve un conflicto 409 sin sobrescribir el registro confirmado.
 
 ## Respaldos y recuperación
 
