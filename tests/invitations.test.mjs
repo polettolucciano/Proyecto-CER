@@ -4,7 +4,8 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
 
-const source=readFileSync('supabase/functions/cer-invite/index.ts','utf8').replace(/^import .*;\n/,'');
+const helper=readFileSync('supabase/functions/_shared/requestBody.ts','utf8').replaceAll('export ','');
+const source=helper+'\n'+readFileSync('supabase/functions/cer-invite/index.ts','utf8').replace(/^import .*;\n/gm,'');
 const javascript=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText;
 const origin='https://cer-preview.example.test';
 const input={name:'Enfermería de prueba',email:'nurse@example.test',role:'Enfermería',modules:['generator']};
@@ -12,8 +13,8 @@ function service({signedIn=true,role='Administrador',active=true,conflicts=0,inv
  let handler,invitations=0,saves=0;
  const caller={auth:{getUser:async()=>({data:{user:signedIn?{id:'admin-id'}:null},error:signedIn?null:{}})},from:table=>({select:()=>({eq:()=>({single:async()=>({data:{role,active}})}),single:async()=>({data:{revision:1}})})}),rpc:async()=>{saves++;return {error:conflicts-- >0?{code:'PT409'}:saveFails?{code:'42501'}:null};}};
  const admin={auth:{admin:{inviteUserByEmail:async()=>{invitations++;return inviteFails?{error:{},data:{}}:{data:{user:{id:'nurse-id'}}};}}}};
- vm.runInNewContext(javascript,{Deno:{env:{get:key=>key==='APP_ORIGIN'?origin:key==='SUPABASE_SERVICE_ROLE_KEY'?'server-only':'public'},serve:fn=>{handler=fn;}},createClient:(_url,key)=>key==='server-only'?admin:caller,Request,Response,crypto});
- return {invoke:(body=input,extra={})=>handler(new Request(origin,{method:'POST',headers:{origin,...extra.headers},body:typeof body==='string'?body:JSON.stringify(body)})),counts:()=>({invitations,saves})};
+ vm.runInNewContext(javascript,{Deno:{env:{get:key=>key==='APP_ORIGIN'?origin:key==='SUPABASE_SERVICE_ROLE_KEY'?'server-only':'public'},serve:fn=>{handler=fn;}},createClient:(_url,key)=>key==='server-only'?admin:caller,Request,Response,crypto,TextDecoder,Uint8Array});
+ return {invoke:(body=input,extra={})=>handler(new Request(origin,{method:'POST',headers:{origin,'Content-Type':'application/json',...extra.headers},body:typeof body==='string'?body:JSON.stringify(body)})),counts:()=>({invitations,saves})};
 }
 test('invitaciones: exige identidad activa y rol administrador',async()=>{
  for(const config of [{signedIn:false},{role:'Enfermería'},{active:false}]){
@@ -31,4 +32,11 @@ test('invitaciones: un conflicto de revisión no vuelve a enviar el correo',asyn
 });
 test('invitaciones: informa perfil incompleto sin simular éxito ni reinvitar',async()=>{
  const s=service({saveFails:true}),response=await s.invoke();assert.equal(response.status,409);assert.match((await response.json()).message,/perfil requiere completar/);assert.deepEqual(s.counts(),{invitations:1,saves:1});
+});
+test('invitaciones: rechaza solicitudes grandes, multibyte y tipos falsos antes de mandar correo',async()=>{
+ const s=service();
+ assert.equal((await s.invoke('x'.repeat(20001))).status,413);
+ assert.equal((await s.invoke('é'.repeat(11000))).status,413);
+ assert.equal((await s.invoke(input,{headers:{'Content-Type':'text/plain'}})).status,415);
+ assert.equal(s.counts().invitations,0);
 });

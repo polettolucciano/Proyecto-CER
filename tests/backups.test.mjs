@@ -1,6 +1,7 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {rotationCandidates,staleBackup,assertRestoreTarget,validateManifest,assertRecoveryCounts} from '../scripts/backups/policy.mjs';
 import {dumpCounts,recoveryTables} from '../scripts/backups/recovery.mjs';
+import {validateStorageInventory} from '../scripts/backups/storageIntegrity.mjs';
 const now=new Date('2026-10-26T12:00:00Z');
 const copies=Array.from({length:34},(_,i)=>({name:`CER-202610${String(26-i).padStart(2,'0')}T120000Z.tar.gz.age`,createdAt:new Date(+now-i*86400000).toISOString(),verified:true,size:100}));
 test('no rota sin una copia nueva válida',()=>{assert.throws(()=>rotationCandidates([],now));assert.throws(()=>rotationCandidates(copies.slice(3,7),now));});
@@ -29,4 +30,17 @@ test('cuenta las filas del snapshot SQL incluyendo Auth, tareas e históricos',(
  const sql=Object.keys(recoveryTables).map(name=>`COPY ${name.split('.').map(part=>'"'+part+'"').join('.')} (id) FROM stdin;\nrow-1\nrow-2\n\\.\n`).join('');
  const counts=dumpCounts(sql);assert.equal(counts.authUsers,2);assert.equal(counts.records,2);assert.equal(counts.tasks,2);
  assert.throws(()=>dumpCounts('COPY public.cer_equipment (id) FROM stdin;\n\\.\n'));
+});
+test('Storage recuperado: exige igualdad de archivos, tamaños y hashes',()=>{
+ const file={path:'generator/user/operation/photo.webp',size:20,sha256:'a'.repeat(64)};
+ assert.doesNotThrow(()=>validateStorageInventory([file],[file]));
+ assert.doesNotThrow(()=>validateStorageInventory([],[]));
+ for(const actual of [[],[file,{...file,path:'extra.webp'}],[{...file,size:21}],[{...file,sha256:'b'.repeat(64)}]])assert.throws(()=>validateStorageInventory([file],actual));
+});
+test('Storage recuperado: rechaza rutas manipuladas, repetidas o metadatos inválidos',()=>{
+ const file={path:'generator/user/photo.webp',size:20,sha256:'a'.repeat(64)};
+ for(const path of ['../photo','/photo','a/../photo','a//photo','a/./photo','a\\photo','a\u0000photo'])assert.throws(()=>validateStorageInventory([{...file,path}],[]));
+ assert.throws(()=>validateStorageInventory([file,file],[file,file]));
+ assert.throws(()=>validateStorageInventory([{...file,size:-1}],[]));
+ assert.throws(()=>validateStorageInventory([{...file,sha256:'incorrecto'}],[]));
 });

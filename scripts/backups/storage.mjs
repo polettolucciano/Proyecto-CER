@@ -1,6 +1,7 @@
 import {mkdtemp,writeFile,readFile,readdir,stat,mkdir,rm} from 'node:fs/promises';
 import {createReadStream} from 'node:fs';import {createHash} from 'node:crypto';import {spawn} from 'node:child_process';import {tmpdir} from 'node:os';import {join,relative,resolve} from 'node:path';
 import {rotationCandidates,staleBackup,validateManifest} from './policy.mjs';
+import {validateStorageInventory} from './storageIntegrity.mjs';
 const need=k=>{if(!process.env[k])throw new Error(`Falta ${k}`);return process.env[k];};
 const run=(cmd,args,capture=false)=>new Promise((ok,fail)=>{const child=spawn(cmd,args,{stdio:['ignore',capture?'pipe':'ignore','ignore']});let out='';if(capture)child.stdout.on('data',b=>out+=b);child.on('error',()=>fail(new Error(`No se pudo ejecutar ${cmd}.`)));child.on('exit',c=>c===0?ok(out):fail(new Error(`Falló ${cmd}.`)));});
 async function hash(path){const h=createHash('sha256');for await(const b of createReadStream(path))h.update(b);return h.digest('hex');}
@@ -42,7 +43,8 @@ try{
   const names=(await run('tar',['-tzf',archive],true)).trim().split('\n');if(names.some(n=>n!=='inventory.json' && !(n.startsWith('objects/') && !n.split('/').includes('..') && !n.startsWith('/'))))throw new Error('Ruta no válida.');
   const types=(await run('tar',['-tvzf',archive],true)).trim().split('\n');if(types.some(line=>!['-','d'].includes(line[0])))throw new Error('El respaldo contiene enlaces o dispositivos.');
   await run('tar',['-xzf',archive,'-C',dir]);const files=JSON.parse(await readFile(join(dir,'inventory.json'),'utf8'));
-  for(const item of files){if(typeof item.path!=='string' || item.path.startsWith('/') || item.path.split('/').includes('..') || await hash(join(dir,'objects',item.path))!==item.sha256)throw new Error('Inventario inválido.');}
+  validateStorageInventory(files,await inventory(join(dir,'objects')));
+  if(files.length!==manifest.objects)throw new Error('El conteo de archivos no coincide con el manifiesto.');
   await run('rclone',['copy',join(dir,'objects'),target,'--immutable']);await run('rclone',['check',join(dir,'objects'),target,'--download']);console.log(JSON.stringify({storageRestored:true,objects:files.length}));
  }else throw new Error('Modo de Storage no válido.');
 }catch(e){console.error(e.message);process.exitCode=1;}finally{if(temporaryDirectory){try{await rm(temporaryDirectory,{recursive:true,force:true});}catch{console.error('No se pudo limpiar el directorio temporal privado.');process.exitCode=1;}}}

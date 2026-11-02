@@ -15,6 +15,8 @@ Actualización 28/10/2026: se verificaron los flujos de backend con cuentas téc
 
 ## Funcionalidades
 
+Revisión de seguridad 02/11/2026: Supabase reactivado y verificado Healthy. Nuevas validaciones, protección de fotos y recuperación reforzada preparadas localmente, con migración pendiente de aprobación. Ver [hallazgos y riesgos](docs/SEGURIDAD_2026-11-02.md) y [pruebas ejecutadas](docs/QA_SEGURIDAD_2026-11-02.md). No confundir la demo abierta con el entorno operativo protegido.
+
 Pulso operativo para Administración, calendario para Enfermería, inventario, tareas recurrentes, controles de grupo electrógeno/ósmosis/loop, fotos, búsqueda e historial, rectificaciones/anulaciones que preservan originales, reportes y exportación XLSX. Biblioteca pública de capacitaciones separada del panel privado.
 
 Carro de paro, Fumigación, Electricidad, Salas y Otros conservan fichas iniciales hasta validar sus planillas. Las notificaciones operativas por correo/celular siguen pendientes; no son las alertas de infraestructura de los backups.

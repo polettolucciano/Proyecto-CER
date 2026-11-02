@@ -10,6 +10,8 @@ before(async()=>{
  await db.exec(await readFile(new URL('../supabase/migrations/20261026194621_cer_storage.sql',import.meta.url),'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261027034907_evidence_optimization.sql',import.meta.url),'utf8'));
  await db.exec(await readFile(new URL('../supabase/migrations/20261028231130_conflict_http_status.sql',import.meta.url),'utf8'));
+ await db.exec("create function public.rls_auto_enable() returns event_trigger language plpgsql security definer as $$begin end$$;");
+ await db.exec(await readFile(new URL('../supabase/migrations/20261102194118_security_validation.sql',import.meta.url),'utf8'));
  await db.query(`insert into auth.users values($1,'admin@example.test'),($2,'nurse@example.test'),($3,'inactive@example.test')`,[admin,nurse,inactive]);
  await db.query(`insert into cer_profiles(id,name,email,role,modules,active) values($1,'Admin','admin@example.test','Administrador','{}',true),($2,'Nurse','nurse@example.test','Enfermería',array['generator'],true),($3,'Inactive','inactive@example.test','Enfermería',array['generator'],false)`,[admin,nurse,inactive]);
 });
@@ -87,4 +89,53 @@ test('Storage: bucket privado, aislamiento de módulo y sin borrado de evidencia
  await db.query('insert into cer_attachments(record_id,path,name,mime) values($1,$2,$3,$4)',['r1',path,'photo.jpg','image/jpeg']);
  const deleted=await asUser(nurse,'delete from storage.objects where name=$1 returning name',[path]);assert.equal(deleted.length,0);
  const bucket=(await db.query(`select public from storage.buckets where id='cer-evidence'`)).rows[0];assert.equal(bucket.public,false);
+});
+
+test('rechaza resultados desconocidos en lugar de convertirlos silenciosamente en Conforme',async()=>{
+ for(const result of ['inventado',null,'',false])await assert.rejects(()=>apply(nurse,[record('invalid-result-'+String(result),{date:'2026-03-01',result})]),/INVALID_RESULT/);
+});
+test('nadie puede borrar directamente una foto propia que puede estar vinculándose a un registro',async()=>{
+ const path=`generator/${nurse}/pending/photo.webp`;
+ await db.query('insert into storage.objects values($1,$2)',['cer-evidence',path]);
+ const rows=await asUser(nurse,'delete from storage.objects where name=$1 returning name',[path]);
+ assert.equal(rows.length,0);
+});
+test('una operación inválida revierte también los cambios anteriores del mismo lote',async()=>{
+ const revision=(await db.query('select revision from cer_settings')).rows[0].revision;
+ await assert.rejects(()=>apply(admin,[equipment('ROLLBACK-ME','generator'),record('bad-batch',{values:{}})]),/REQUIRED_FIELD/);
+ assert.equal((await db.query("select count(*)::int n from cer_equipment where id='ROLLBACK-ME'")).rows[0].n,0);
+ assert.equal((await db.query('select revision from cer_settings')).rows[0].revision,revision);
+});
+test('no permite reutilizar una operación para cambiar su contenido',async()=>{
+ const op=crypto.randomUUID();
+ await apply(admin,[equipment('IDEMPOTENT','generator')],{op});
+ await assert.rejects(()=>apply(admin,[equipment('OTHER','generator')],{op}),/IDEMPOTENCY_MISMATCH/);
+});
+test('rechaza evidencia ajena y no permite falsificar ni borrar la auditoría',async()=>{
+ const path=`generator/${admin}/foreign/photo.webp`;
+ await db.query('insert into storage.objects values($1,$2)',['cer-evidence',path]);
+ await assert.rejects(()=>apply(nurse,[record('stolen-photo',{date:'2026-04-01',photos:[{storagePath:path,name:'photo.webp',type:'image/webp'}]})]),/INVALID_ATTACHMENT/);
+ for(const sql of ["insert into cer_audit_events(actor_id,action,entity_id,entity_type,summary) values('"+nurse+"','fake','fake','fake','fake')",'delete from cer_audit_events',"update cer_audit_events set summary='fake'"])await assert.rejects(()=>asUser(nurse,sql),/permission denied/);
+});
+test('revocar el perfil bloquea también escrituras con una sesión previamente válida',async()=>{
+ await db.query('update cer_profiles set active=false where id=$1',[nurse]);
+ await assert.rejects(()=>apply(nurse,[record('after-revocation',{date:'2026-04-02'})]),/AUTH_REQUIRED/);
+ assert.equal((await asUser(nurse,'select * from cer_records')).length,0);
+ await db.query('update cer_profiles set active=true where id=$1',[nurse]);
+});
+test('rechaza lotes excesivos, comandos nulos y adjuntos mal formados sin escribir',async()=>{
+ for(const commands of [[],Array(51).fill(record('too-many')),[null],[{kind:'unknown',data:{id:'bad'}}]])await assert.rejects(()=>apply(nurse,commands),/INVALID_/);
+ await assert.rejects(()=>apply(nurse,[record('bad-photos',{date:'2026-04-03',photos:{}})]));
+});
+test('los metadatos de equipos y tareas no admiten objetos que puedan convertirse en fórmulas o romper la interfaz',async()=>{
+ const poisoned={formula:'HYPERLINK("https://attacker.example","abrir")'};
+ for(const key of ['name','location','model','serial','code'])await assert.rejects(()=>apply(admin,[{kind:'equipment',data:{...equipment('POISON-'+key,'generator').data,[key]:poisoned}}]),/INVALID_EQUIPMENT/);
+ const task={kind:'task',data:{id:'poison-task',module:'generator',equipmentId:'GE',assignedTo:nurse,frequency:'Única',due:'2026-05-01',active:true,title:poisoned,notes:''}};
+ await assert.rejects(()=>apply(admin,[task]),/INVALID_TASK/);
+ await assert.rejects(()=>apply(admin,[{...task,data:{...task.data,title:'Título válido',notes:poisoned}}]),/INVALID_TASK/);
+ await assert.rejects(()=>apply(admin,[{kind:'training',data:{id:'poison-training',title:poisoned,url:'https://example.test',type:'Documento',published:true}}]),/INVALID_TRAINING/);
+});
+test('la función automática de RLS conserva su dueño pero no se ofrece como RPC a usuarios',async()=>{
+ const [permissions]=(await db.query("select has_function_privilege('anon','public.rls_auto_enable()','EXECUTE') anonymous,has_function_privilege('authenticated','public.rls_auto_enable()','EXECUTE') signedin,has_function_privilege(current_user,'public.rls_auto_enable()','EXECUTE') owner")).rows;
+ assert.equal(permissions.anonymous,false);assert.equal(permissions.signedin,false);assert.equal(permissions.owner,true);
 });

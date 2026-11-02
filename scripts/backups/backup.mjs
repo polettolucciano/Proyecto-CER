@@ -30,7 +30,9 @@ async function generate(){
  await run(cli,['db','dump','--db-url',db,'--schema','supabase_migrations','--data-only','--use-copy','-f',join(dir,'history_data.sql')]);
  const storagePolicies=await readFile('supabase/migrations/20261026194621_cer_storage.sql','utf8');
  const optimizationPolicy=await readFile('supabase/migrations/20261027034907_evidence_optimization.sql','utf8');
- await writeFile(join(dir,'storage_policies.sql'),storagePolicies+'\n'+optimizationPolicy);
+ // Match the current Storage permissions without rerunning application DDL
+ // over the function definitions already present in the schema dump.
+ await writeFile(join(dir,'storage_policies.sql'),storagePolicies+'\n'+optimizationPolicy+'\ndrop policy if exists cer_evidence_cleanup on storage.objects;\n');
  const checks={};for(const name of await readdir(dir)){if((await stat(join(dir,name))).size<10)throw new Error('Dump vacío o incompleto.');checks[name]=await hash(join(dir,name));}
  await writeFile(join(dir,'checksums.json'),JSON.stringify(checks));
  const archive=join(dir,'backup.tar.gz');await run('tar',['-czf',archive,'-C',dir,...Object.keys(checks),'checksums.json']);await run('tar',['-tzf',archive],{capture:true});

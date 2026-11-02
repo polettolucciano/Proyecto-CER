@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-02",
+  "project": "pnqsvmtmkceznoswpgfz",
+  "supabaseStatus": "ACTIVE_HEALTHY",
+  "authHttpStatus": 200,
+  "remoteRlsEnabled": true,
+  "remoteAppliedMigrations": 4,
+  "operationalProfiles": 0,
+  "operationalEquipment": 0,
+  "operationalRecords": 0,
+  "localTests": {
+    "vitest": 30,
+    "postgresEmulation": 17,
+    "backups": 9,
+    "invitationsMock": 5,
+    "evidenceHandlerMock": 4,
+    "total": 65
+  },
+  "typechecks": {
+    "frontend": true,
+    "edgeFunctionsWithMinimalDenoDeclaration": true
+  },
+  "dependencyAudit": {
+    "moderate": 8,
+    "high": 0,
+    "critical": 0
+  },
+  "newMigration": "20261102194118_security_validation.sql",
+  "newMigrationApplied": false,
+  "vercelChanged": false,
+  "liveAdversarialChangesVerified": false
+}

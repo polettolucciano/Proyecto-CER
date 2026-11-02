@@ -49,6 +49,15 @@ try{
  assert.match((await apply(nurse,[equipment('-forbidden','generator')])).error?.message??'',/ADMIN_REQUIRED/);
  const escalation=await nurse.from('cer_profiles').update({role:'Administrador'}).eq('id',accounts[1]);assert.ok(escalation.error);
  checks.equipmentPersistence=true;checks.rlsAndAdministrativePermissions=true;
+ if(process.argv.includes('--security')){
+  stage='validación adversarial remota';
+  for(const result of ['unknown',null,false])assert.match((await apply(nurse,[record('-invalid-result-'+String(result),{result,date:'2026-03-01'})])).error?.message??'',/INVALID_RESULT/);
+  assert.match((await apply(admin,[{kind:'equipment',data:{...equipment('-poison','generator').data,name:{formula:'1+1'}}}])).error?.message??'',/INVALID_EQUIPMENT/);
+  assert.match((await apply(nurse,[record('-invalid-photo',{photos:{},date:'2026-03-02'})])).error?.message??'',/INVALID_ATTACHMENTS/);
+  const [permissions]=query("select not exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='cer_evidence_cleanup') cleanup_blocked, not has_function_privilege('anon','public.rls_auto_enable()','EXECUTE') helper_anon_blocked, not has_function_privilege('authenticated','public.rls_auto_enable()','EXECUTE') helper_user_blocked");
+  assert.equal(permissions.cleanup_blocked,true);assert.equal(permissions.helper_anon_blocked,true);assert.equal(permissions.helper_user_blocked,true);
+  checks.adversarialInputValidation=true;checks.storageCleanupRestricted=true;checks.platformHelperPrivilegesRestricted=true;
+ }
  stage='tarea y autoría';
  const task={kind:'task',data:{id:prefix+'-task',module:'generator',equipmentId:prefix+'-ge',assignedTo:accounts[1],frequency:'Mensual',due:'2026-01-31',scheduleBasis:'planned',title:'Prueba mensual',active:true,notes:''}};
  assert.ifError((await apply(admin,[task])).error);
@@ -114,6 +123,6 @@ finally{
   for(const id of accounts){const removed=await infrastructure.auth.admin.deleteUser(id);if(removed.error)clean=false;}
  }
  checks.temporaryDataCleaned=clean;if(!clean){process.exitCode=1;report.result='FAIL';}
- writeFileSync('docs/evidence/backend-live.json',JSON.stringify(report,null,2)+'\n');
+ writeFileSync(process.argv.includes('--security')?'docs/evidence/backend-security-live.json':'docs/evidence/backend-live.json',JSON.stringify(report,null,2)+'\n');
  console.log(JSON.stringify(report,null,2));
 }
