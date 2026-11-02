@@ -6,7 +6,7 @@ Fecha: 02/11/2026. Alcance: React/Vite, RPC PostgreSQL, permisos, invitaciones, 
 
 Supabase Proyecto-CER (`pnqsvmtmkceznoswpgfz`) fue reactivado por pedido expreso del usuario. Management API/CLI informó `ACTIVE_HEALTHY`, Auth respondió HTTP 200 y PostgreSQL confirmó cuatro migraciones, RLS activo y cero perfiles, equipos y registros operativos. La web pública permanece en demo, sin ingreso, como se había solicitado.
 
-Las correcciones nuevas están implementadas y probadas **localmente**, pero la quinta migración `20261102194118_security_validation.sql` no está aplicada al servicio. No se desplegaron funciones ni Vercel. Por tanto, no se presenta este informe como acreditación de que todas las protecciones nuevas estén activas remotamente.
+Actualización posterior a la aprobación: la quinta migración `20261102194118_security_validation.sql` quedó aplicada en Proyecto-CER y la prueba remota `backend-live.mjs --run --security` terminó OK, incluida la limpieza de cuentas temporales. Advisors ya no informa los avisos del helper; queda `auth_leaked_password_protection` pendiente de configurar al habilitar el ingreso. Los estados locales descritos en los hallazgos siguientes corresponden al diagnóstico inicial: S1, S2, S3 y S6 ya están aplicados remotamente. S4 sigue pendiente del despliegue de invitaciones y S5 de una restauración real. Evidencia: `evidence/backend-security-live.json`.
 
 ## Hallazgos reproducidos y correcciones preparadas
 

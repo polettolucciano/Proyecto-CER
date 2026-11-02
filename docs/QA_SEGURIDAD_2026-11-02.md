@@ -45,7 +45,13 @@ Evidencia: `evidence/security-ui-xss-2026-11-02.jpg`, `evidence/security-ui-narr
 
 Captura de reactivación: `evidence/supabase-reactivated-2026-11-02.jpg`. Los errores agregados visibles durante el arranque no se interpretan como prueba de fraude ni como ausencia de incidentes; no se realizó análisis exhaustivo de logs de plataforma en esta etapa.
 
-## Pendiente antes de afirmar seguridad operativa
+## Actualización tras autorización y aplicación remota
+
+Se aplicó la quinta migración `20261102194118_security_validation.sql` al proyecto exacto. La primera ejecución de QA se detuvo en setup por timeout del CLI y confirmó limpieza; una consulta SQL aislada respondió correctamente con cero perfiles. La siguiente ejecución secuencial terminó OK: validaciones adversariales, RLS, permisos administrativos, privilegios del helper, restricción de borrado de fotos, autoría, persistencia, historial, rectificación, anulación, cierre de sesión y concurrencia. Las dos escrituras simultáneas respondieron HTTP 200 y HTTP 409 en 90 y 102 ms respectivamente. La evidencia `evidence/backend-security-live.json` confirma limpieza de datos técnicos.
+
+Advisors de seguridad ya no reporta los dos avisos del helper. Queda el aviso `auth_leaked_password_protection`, pendiente de configuración de Auth antes de uso real. No se habilitaron cuentas operativas ni se desplegó la función de invitaciones.
+
+## Pendientes del diagnóstico inicial (puntos 1 y 2 completados arriba)
 
 1. Autorizar y aplicar `20261102194118_security_validation.sql`, no destructiva de datos, que restringe validaciones y permisos.
 2. Ejecutar `node scripts/qa/backend-live.mjs --run --security` en el proyecto todavía vacío; verifica las nuevas entradas adversariales, privilegios y regresión con fixtures temporales. Está preparado y **no se ejecutó** contra el esquema remoto anterior.

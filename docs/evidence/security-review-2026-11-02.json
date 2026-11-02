@@ -4,7 +4,7 @@
   "supabaseStatus": "ACTIVE_HEALTHY",
   "authHttpStatus": 200,
   "remoteRlsEnabled": true,
-  "remoteAppliedMigrations": 4,
+  "remoteAppliedMigrations": 5,
   "operationalProfiles": 0,
   "operationalEquipment": 0,
   "operationalRecords": 0,
@@ -26,7 +26,11 @@
     "critical": 0
   },
   "newMigration": "20261102194118_security_validation.sql",
-  "newMigrationApplied": false,
+  "newMigrationApplied": true,
+  "remoteSecurityAdvisors": {
+    "platformHelperWarningsResolved": true,
+    "remainingWarning": "auth_leaked_password_protection"
+  },
   "vercelChanged": false,
-  "liveAdversarialChangesVerified": false
+  "liveAdversarialChangesVerified": true
 }
