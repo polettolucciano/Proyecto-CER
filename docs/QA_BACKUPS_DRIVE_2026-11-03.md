@@ -49,3 +49,11 @@ Se preparó la identidad de recuperación en Documents/CER-Recuperacion/cer-back
 El usuario autorizó publicar en main el 03/11/2026. El commit ce30e8e se publicó y Vercel confirmó READY; se verificaron en navegador las páginas públicas /backups/index.html y /backups/privacidad.html.
 
 GitHub rechazó los workflows al validarlos: runner.temp no está disponible en jobs.<job_id>.env. La sintaxis YAML válida no detectaba ese error de contexto. Se trasladó la definición de RCLONE_CONFIG al primer paso de cada job, usando RUNNER_TEMP y GITHUB_ENV. actionlint v1.7.12 oficial, con SHA-256 verificado, aprobó los tres workflows corregidos. Los flags continúan en false; una ejecución omitida no acredita un backup.
+
+La corrección se publicó en ce91ee3. Se despacharon los tres workflows desde main: 41758337446 (CER backups), 41758341372 (CER Storage backup) y 41758344951 (CER backup freshness). GitHub aceptó sus definiciones; los tres finalizaron skipped por los flags false. Esto confirma validación y bloqueo de activación, no generación de copias. En navegador, el sitio principal continúa mostrando Versión de demostración / Sin conexión a Supabase.
+
+Las URLs publicadas y el dominio proyecto-cer.vercel.app se guardaron correctamente en la información de marca de Google. Publicar app ya está habilitado. La revisión automática rechazó cambiar el estado de OAuth porque la aprobación de despliegue web no cubría ese cambio; se solicitó autorización específica al usuario y no se ejecutó.
+
+## Decisión final de esta etapa: automatización apagada
+
+Después de solicitar aclaración sobre el cambio de estado OAuth, el usuario indicó expresamente que todavía no existen datos reales y que los backups deben comenzar solo cuando él lo pida más adelante. No se publicó el cliente OAuth ni se generaron copias SQL/Storage. Se deshabilitaron manualmente los tres workflows en GitHub, además de mantener false los flags de generación, fotos, recuperación y rotación. Las conexiones SQL/Storage y el consentimiento OAuth propio siguen pendientes para esa activación futura.

@@ -2,6 +2,16 @@
 
 Destino confirmado por el usuario el 03/11/2026: **cerresistencia@gmail.com**. No requiere contratar un plan de pago; el espacio disponible debe vigilarse. Este procedimiento aún requiere acreditar OAuth, primera copia y recuperación. La web de inspección continúa sin ingreso y con datos de demostración. Ninguna credencial se pega en el chat ni se sube a Git.
 
+## Estado de espera solicitado por el usuario
+
+El 03/11/2026 el usuario indicó que no hay datos reales y pidió dejar todo preparado **sin generar backups hasta una nueva instrucción expresa**. Los workflows están publicados en main pero deshabilitados manualmente en GitHub; los cuatro flags permanecen false. Las validaciones manuales de definición terminaron skipped y no generaron respaldos.
+
+Cliente OAuth de CER creado con drive.file e información pública publicada. Google mantiene el cliente en Testing; cambiarlo a producción y completar OAuth requieren autorización específica pendiente. Tampoco se cargaron las credenciales privadas del origen SQL y fotografías. No presentar las conexiones de origen como terminadas.
+
+La identidad age está fuera del repositorio, en Documents/CER-Recuperacion/cer-backup-identity.txt, con permisos privados. Custodiar otra copia segura/offline antes de depender de los backups. GitHub solo contiene su destinatario público.
+
+Cuando el usuario indique activar: completar OAuth propio y credenciales de origen, volver a habilitar los workflows en Actions, ejecutar la primera copia SQL y fotos y verificar sus bytes. Monitoreo y canal de avisos se comprueban entonces. La rotación sigue condicionada a recuperación aislada y autorización; no se habilita por empezar a generar copias.
+
 ## 1. Autorizar Google una sola vez
 
 En una computadora confiable instalar `rclone` y `age` desde sus distribuciones oficiales. La generación automática posterior ocurre en GitHub, aunque esta computadora esté apagada.

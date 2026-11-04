@@ -1,6 +1,6 @@
 # Respaldos CER — preparación, activación y recuperación
 
-Estado al 03/11/2026 (decisión más reciente): el destino es **Google Drive de cerresistencia@gmail.com**. Cloudflare R2 se descartó por requerir activar facturación. La programación diaria y configuración privada están preparadas localmente; falta completar OAuth, secretos, publicación autorizada y backup/restauración reales. Ver [ACTIVACION_DRIVE.md](ACTIVACION_DRIVE.md).
+Estado al 03/11/2026 (decisión más reciente): el destino es **Google Drive de cerresistencia@gmail.com**. Cloudflare R2 se descartó por requerir activar facturación. La programación diaria está publicada en main, pero el usuario pidió mantenerla apagada hasta su próxima instrucción: workflows deshabilitados y flags false. Falta completar OAuth propio, secretos de origen y backup/restauración reales antes de operar. Ver [ACTIVACION_DRIVE.md](ACTIVACION_DRIVE.md).
 
 ## Diseño
 El workflow diario genera roles, estructura, datos e historial de migraciones con la CLI oficial de Supabase fijada en package-lock. Incluye las políticas CER de Storage para recrearlas en un proyecto vacío. Comprime con tar/gzip y cifra con age usando solo la clave pública. Verifica estructura del archivo y hashes, sube el cifrado con rclone y vuelve a leerlo para comparar SHA-256. Solo después publica su manifiesto de éxito.
