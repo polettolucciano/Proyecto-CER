@@ -1,5 +1,5 @@
 export type ModuleId = 'generator' | 'osmosis' | 'loop' | 'crash' | 'fumigation' | 'electrical' | 'rooms' | 'general';
-export type Page = 'dashboard' | 'planning' | 'records' | 'equipment' | 'training' | 'public-training' | 'reports' | 'users' | 'settings';
+export type Page = 'summary' | 'dashboard' | 'planning' | 'records' | 'equipment' | 'training' | 'public-training' | 'reports' | 'users' | 'settings';
 export type Frequency = 'Diaria' | 'Semanal' | 'Quincenal' | 'Mensual' | 'Bimestral' | 'Trimestral' | 'Semestral' | 'Anual' | 'Única';
 export type Role = 'Administrador' | 'Supervisor' | 'Enfermería';
 export type Result = 'ok' | 'attention';
@@ -21,6 +21,6 @@ export interface Task { id: string; title: string; module: ModuleId; equipmentId
 export interface Attachment { id: string; name: string; type: string; data: Blob; category?: string; }
 export interface MaintenanceRecord { id: string; module: ModuleId; equipmentId: string; taskId?: string; date: string; createdAt: string; userId: string; result: Result; values: Values; notes: string; photos: Attachment[]; status: RecordStatus; revision: number; supersedesId?: string; supersededById?: string; voidedAt?: string; voidedBy?: string; voidReason?: string; }
 export interface AuditEvent { id: string; occurredAt: string; actorId: string; action: AuditAction; entityType: 'maintenance-record' | 'equipment' | 'task' | 'profile' | 'training' | 'settings'; entityId: string; summary: string; relatedEntityId?: string; }
-export interface Training { id: string; title: string; description: string; category: string; type: 'Video' | 'Documento' | 'Presentación'; url: string; published: boolean; date: string; }
+export interface Training { id: string; title: string; description: string; category: string; submodule?: string; type: 'Video' | 'Documento' | 'Presentación'; url: string; published: boolean; date: string; }
 export interface Settings { organization: string; location: string; advanceDays: number; emailAlerts: boolean; mobileAlerts: boolean; }
 export interface Workspace { version: 2; equipment: Equipment[]; users: TeamUser[]; tasks: Task[]; records: MaintenanceRecord[]; auditEvents: AuditEvent[]; training: Training[]; settings: Settings; }

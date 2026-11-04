@@ -10,11 +10,13 @@ import { RecordsTable } from './RecordsTable';
 
 const PAGE_SIZE = 8;
 
-export function RecordsPage({ actions, initialModule }: { actions: AppActions; initialModule?: ModuleId }) {
+export function RecordsPage({ actions, initialModule, initialEquipment }: { actions: AppActions; initialModule?: ModuleId; initialEquipment?: string }) {
   const data = useVisibleWorkspace();
   const { download, busy } = useExportRecords();
   const [query, setQuery] = useState('');
   const [module, setModule] = useState<string>(initialModule ?? 'all');
+  const [equipmentId, setEquipmentId] = useState(initialEquipment ?? 'all');
+  const selectedEquipment = data.equipment.find(item => item.id === equipmentId);
   const [result, setResult] = useState('all');
   const [lifecycle, setLifecycle] = useState('active');
   const [from, setFrom] = useState('');
@@ -23,6 +25,7 @@ export function RecordsPage({ actions, initialModule }: { actions: AppActions; i
   const [moreFilters, setMoreFilters] = useState(false);
   const records = [...data.records].filter(record =>
     (module === 'all' || record.module === module)
+    && (equipmentId === 'all' || record.equipmentId === equipmentId)
     && (result === 'all' || record.result === result)
     && (lifecycle === 'all' || record.status === lifecycle)
     && (!from || record.date >= from) && (!to || record.date <= to)
@@ -31,19 +34,20 @@ export function RecordsPage({ actions, initialModule }: { actions: AppActions; i
   const current = Math.min(page, Math.max(1, Math.ceil(records.length / PAGE_SIZE)));
   const pages = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
   const advancedCount = Number(Boolean(from)) + Number(Boolean(to)) + Number(lifecycle !== 'active');
-  const hasFilters = advancedCount > 0 || module !== 'all' || query || result !== 'all';
+  const hasFilters = advancedCount > 0 || equipmentId !== 'all' || module !== 'all' || query || result !== 'all';
   function clearFilters() {
-    setQuery(''); setModule('all'); setResult('all'); setLifecycle('active'); setFrom(''); setTo(''); setPage(1);
+    setQuery(''); setModule('all'); setEquipmentId('all'); setResult('all'); setLifecycle('active'); setFrom(''); setTo(''); setPage(1);
   }
   return <>
-    <PageHeader title="Historial de controles" description="Consultá los registros y abrí cada control para ver su detalle y versiones.">
+    <PageHeader title={selectedEquipment ? `Historial · ${selectedEquipment.name}` : 'Historial de controles'} description="Consultá los registros y abrí cada control para ver su detalle y versiones.">
       <DownloadButton busy={busy} onClick={() => void download(records)} />
-      <button className="button primary" onClick={() => actions.newRecord(module === 'all' ? undefined : module as ModuleId)}><Icon name="Plus" size={17} />Nuevo control</button>
+      <button className="button primary" onClick={() => actions.newRecord(selectedEquipment?.module ?? (module === 'all' ? undefined : module as ModuleId), undefined, selectedEquipment?.id)}><Icon name="Plus" size={17} />Nuevo control</button>
     </PageHeader>
     <section className="panel">
       <div className="filter-bar compact-record-filters">
         <SearchField value={query} onChange={value => { setQuery(value); setPage(1); }} placeholder="Buscar un control o responsable…" />
-        <ModuleSelect value={module} onChange={value => { setModule(value); setPage(1); }} />
+        <ModuleSelect value={module} onChange={value => { setModule(value); setEquipmentId('all'); setPage(1); }} />
+        <select aria-label="Filtrar por equipo o sector" value={equipmentId} onChange={event => { setEquipmentId(event.target.value); setPage(1); }}><option value="all">Todos los equipos y sectores</option>{data.equipment.filter(item => module === 'all' || item.module === module).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
         <select aria-label="Filtrar por resultado" value={result} onChange={event => { setResult(event.target.value); setPage(1); }}><option value="all">Todos los resultados</option><option value="ok">Conforme</option><option value="attention">Con observaciones</option></select>
         <button className="button secondary small" aria-expanded={moreFilters} aria-controls="advanced-record-filters" onClick={() => setMoreFilters(value => !value)}><Icon name="SlidersHorizontal" size={16} />Más filtros{advancedCount > 0 && <span className="count-pill">{advancedCount}</span>}</button>
       </div>

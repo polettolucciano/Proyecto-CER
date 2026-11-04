@@ -9,12 +9,13 @@ export interface NavigationItem {
 }
 
 export const navigation: NavigationItem[] = [
-  { id: 'dashboard', label: 'Pulso operativo', shortLabel: 'Inicio', icon: 'LayoutDashboard', group: 'Operación' },
-  { id: 'planning', label: 'Planificación', shortLabel: 'Agenda', icon: 'CalendarDays', group: 'Operación' },
+  { id: 'dashboard', label: 'Equipos y sectores', shortLabel: 'Inicio', icon: 'LayoutDashboard', group: 'Operación' },
+  { id: 'planning', label: 'Planificación', shortLabel: 'Planificación', icon: 'CalendarDays', group: 'Operación' },
   { id: 'records', label: 'Registros', shortLabel: 'Historial', icon: 'ClipboardCheck', group: 'Operación' },
-  { id: 'equipment', label: 'Equipos y sectores', shortLabel: 'Equipos', icon: 'Wrench', group: 'Operación' },
-  { id: 'reports', label: 'Reportes', shortLabel: 'Reportes', icon: 'FileSpreadsheet', group: 'Operación' },
+  { id: 'equipment', label: 'Administrar equipos', shortLabel: 'Equipos', icon: 'Wrench', group: 'Operación' },
+  { id: 'reports', label: 'Cronograma', shortLabel: 'Cronograma', icon: 'FileSpreadsheet', group: 'Operación' },
   { id: 'training', label: 'Capacitaciones', shortLabel: 'Aprender', icon: 'BookOpen', group: 'Conocimiento' },
+  { id: 'summary', label: 'Resumen del centro', shortLabel: 'Resumen', icon: 'LayoutDashboard', group: 'Administración' },
   { id: 'users', label: 'Personas y permisos', shortLabel: 'Personas', icon: 'Users', group: 'Administración' },
   { id: 'settings', label: 'Configuración', shortLabel: 'Ajustes', icon: 'Settings2', group: 'Administración' },
 ];
@@ -26,10 +27,10 @@ export function primaryNavigation(user: TeamUser): Page[] {
   return user.role === 'Enfermería' ? ['dashboard', 'planning', 'records', 'training'] : ['dashboard', 'planning', 'records', 'reports'];
 }
 
-export function pageLabel(page: Page, user: TeamUser) {
-  if (page === 'dashboard') return user.role === 'Enfermería' ? 'Hoy' : 'Resumen del centro';
-  if (page === 'planning') return 'Agenda';
+export function pageLabel(page: Page, _user: TeamUser) {
+  if (page === 'dashboard') return 'Equipos y sectores';
+  if (page === 'planning') return 'Planificación';
   if (page === 'records') return 'Historial';
-  if (page === 'reports') return 'Informes';
+  if (page === 'reports') return 'Cronograma';
   return navigation.find(item => item.id === page)?.label ?? 'CER Gestión';
 }

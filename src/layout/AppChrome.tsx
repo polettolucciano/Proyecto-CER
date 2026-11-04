@@ -17,7 +17,7 @@ interface SidebarProps {
 export function Sidebar({ currentPage, overdue, open, user, onClose, onNavigate }: SidebarProps) {
   const {remote}=useApp();
   const primary = primaryNavigation(user);
-  const secondary = navigation.filter(item => !primary.includes(item.id) && canAccessPage(user, item.id) && (user.role === 'Administrador' || item.group !== 'Administración'));
+  const secondary = navigation.filter(item => (item.id !== 'equipment' || user.role === 'Administrador') && !primary.includes(item.id) && canAccessPage(user, item.id) && (user.role === 'Administrador' || item.group !== 'Administración'));
   const links = (items: typeof navigation) => items.map(item => (
     <a key={item.id} href={`#${item.id}`} className={`nav-item ${currentPage === item.id ? 'active' : ''}`} aria-current={currentPage === item.id ? 'page' : undefined} onClick={() => onNavigate(item.id)}>
       <Icon name={item.icon} size={20} /><span>{pageLabel(item.id, user)}</span>
@@ -127,8 +127,8 @@ interface MobileNavigationProps {
 
 export function MobileNavigation({ user, currentPage, onMenu, onNavigate, onNewRecord }: MobileNavigationProps) {
   const items: Array<{ page: Page; label: string; icon: string }> = [
-    { page: 'dashboard', label: user.role === 'Enfermería' ? 'Hoy' : 'Resumen', icon: 'LayoutDashboard' },
-    { page: 'planning', label: 'Agenda', icon: 'CalendarDays' },
+    { page: 'dashboard', label: 'Sectores', icon: 'LayoutDashboard' },
+    { page: 'planning', label: 'Planificación', icon: 'CalendarDays' },
     { page: 'records', label: 'Historial', icon: 'ClipboardCheck' },
   ];
   return (

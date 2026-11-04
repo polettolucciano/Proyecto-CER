@@ -79,7 +79,7 @@ export function ReportsPage() {
   const attention = filteredRecords.filter(record => record.result === 'attention').length;
 
   return <>
-    <PageHeader eyebrow="PROGRAMA PREVENTIVO · F-PME-00" title="Informes que hablan el idioma de CER" description="La planilla anual del centro, transformada en una vista clara, trazable y lista para exportar.">
+    <PageHeader eyebrow="PROGRAMA PREVENTIVO · F-PME-00" title="Cronograma de mantenimiento" description="La planilla anual del centro, transformada en una vista clara, trazable y lista para exportar.">
       <DownloadButton busy={busy} label={view === 'annual' ? 'Exportar programa' : 'Exportar registros'} onClick={() => void (view === 'annual' ? downloadAnnual() : downloadFilteredRecords())} />
     </PageHeader>
 

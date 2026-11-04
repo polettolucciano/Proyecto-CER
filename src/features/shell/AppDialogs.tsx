@@ -55,7 +55,7 @@ export function EquipmentDetail({ equipment, actions, onClose }: { equipment: Eq
         <section className="detail-section">
           <h3>Historial del equipo <span className="count-pill">{records.length}</span></h3>
           <RecordsTable records={records.slice(0, 5)} actions={actions} compact />
-          {records.length > 5 && <button className="text-button mt" onClick={() => { onClose(); actions.navigate('records', equipment.module); }}>Ver todos los registros del módulo<Icon name="ArrowRight" size={15} /></button>}
+          {records.length > 5 && <button className="text-button mt" onClick={() => { onClose(); actions.navigate('records', equipment.module, equipment.id); }}>Ver historial de este sector<Icon name="ArrowRight" size={15} /></button>}
         </section>
       </div>
       <footer className="modal-footer">

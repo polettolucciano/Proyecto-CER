@@ -36,11 +36,11 @@ type Dialog =
   | { type: 'search' }
   | { type: 'notifications' };
 
-function readRoute(): { page: Page; module?: ModuleId } {
+function readRoute(): { page: Page; module?: ModuleId; equipmentId?: string } {
   const [path, query] = window.location.hash.replace('#', '').split('?');
   const page = path === 'public-training' || navigation.some(item => item.id === path) ? path as Page : 'dashboard';
   const module = new URLSearchParams(query).get('module');
-  return { page, module: modules.some(item => item.id === module) ? module as ModuleId : undefined };
+  return { page, module: modules.some(item => item.id === module) ? module as ModuleId : undefined, equipmentId: new URLSearchParams(query).get('equipment') ?? undefined };
 }
 
 export default function App() {
@@ -70,10 +70,13 @@ export default function App() {
     if (!canAccessPage(user, route.page)) window.location.hash = '#dashboard';
   }, [route.page, user]);
 
-  const navigate = (page: Page, module?: ModuleId) => {
+  const navigate = (page: Page, module?: ModuleId, equipmentId?: string) => {
     const destination = canAccessPage(user, page) ? page : 'dashboard';
-    const hash = `#${destination}${module && destination === page ? `?module=${module}` : ''}`;
-    if (window.location.hash === hash) setRoute({ page: destination, module: destination === page ? module : undefined });
+    const params = new URLSearchParams();
+    if (destination === page && module) params.set('module', module);
+    if (destination === page && equipmentId) params.set('equipment', equipmentId);
+    const hash = `#${destination}${params.size ? `?${params}` : ''}`;
+    if (window.location.hash === hash) setRoute({ page: destination, module: destination === page ? module : undefined, equipmentId: destination === page ? equipmentId : undefined });
     else window.location.hash = hash;
     setSidebar(false);
   };
@@ -116,9 +119,10 @@ export default function App() {
         </div>
         {storageError && <div className="storage-error" role="alert"><Icon name="TriangleAlert" size={17} />{storageError}{remote && <button onClick={()=>void refresh()}>Actualizar datos</button>}</div>}
         <main id="main-content" className="main-content" tabIndex={-1}>
-          {currentPage === 'dashboard' && <Dashboard actions={actions} />}
+          {currentPage === 'dashboard' && <EquipmentPage actions={actions} home />}
+          {currentPage === 'summary' && <Dashboard actions={actions} />}
           {currentPage === 'planning' && <PlanningPage actions={actions} />}
-          {currentPage === 'records' && <RecordsPage key={`${user.id}-${route.module ?? ''}`} actions={actions} initialModule={route.module} />}
+          {currentPage === 'records' && <RecordsPage key={`${user.id}-${route.module ?? ''}-${route.equipmentId ?? ''}`} actions={actions} initialModule={route.module} initialEquipment={route.equipmentId} />}
           {currentPage === 'equipment' && <EquipmentPage actions={actions} />}
           {currentPage === 'reports' && <ReportsPage />}
           {currentPage === 'training' && <TrainingPage onEdit={actions.editTraining} />}

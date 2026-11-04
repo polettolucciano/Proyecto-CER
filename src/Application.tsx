@@ -2,7 +2,7 @@ import { useEffect,useState } from 'react';
 import App from './App';
 import { AppProvider } from './store';
 import { AuthGate } from './features/auth/AuthGate';
-import { PublicTrainingContent } from './features/training/PublicTrainingPage';
+import { PublicTrainingPage, PublicTrainingContent } from './features/training/PublicTrainingPage';
 import { supabase } from './infrastructure/supabase/client';
 import type { Training } from './types';
 
@@ -13,10 +13,12 @@ function RemoteLibrary(){
  if(error)return <main className="auth-page"><p role="alert">{error}</p></main>;
  return <PublicTrainingContent materials={materials} remote/>;
 }
+const isPublicPage = () => location.pathname.replace(/\/$/, '') === '/capacitaciones' || location.hash === '#public-training';
+
 export function Application(){
- const [publicPage,setPublicPage]=useState(location.hash==='#public-training');
- useEffect(()=>{const change=()=>setPublicPage(location.hash==='#public-training');window.addEventListener('hashchange',change);return()=>window.removeEventListener('hashchange',change);},[]);
- if(supabase && publicPage)return <RemoteLibrary/>;
+ const [publicPage,setPublicPage]=useState(isPublicPage);
+ useEffect(()=>{const change=()=>setPublicPage(isPublicPage());window.addEventListener('hashchange',change);return()=>window.removeEventListener('hashchange',change);},[]);
+ if(publicPage)return supabase ? <RemoteLibrary/> : <AppProvider><PublicTrainingPage/></AppProvider>;
  const app=<AppProvider><App/></AppProvider>;
  return supabase?<AuthGate>{app}</AuthGate>:app;
 }
