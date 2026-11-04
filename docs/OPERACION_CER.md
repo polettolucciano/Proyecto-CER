@@ -39,5 +39,5 @@ Conservar compatibilidad entre frontend y migraciones. Un rollback a una versió
 - Revisar alertas y copias; mantener una persona responsable de responder.
 - Repetir recuperación aislada de forma periódica y después de cambios importantes de esquema.
 - Revisar accesos cuando alguien ingresa o se desvincula.
-- Revisar actualizaciones de dependencias y límites de Supabase, Drive y Vercel con cambios probados y acotados.
+- Revisar actualizaciones de dependencias y límites de Supabase, Google Drive y Vercel con cambios probados y acotados.
 - Conservar la identidad privada de age, la configuración de proveedores y el acceso administrativo en un gestor seguro con recuperación disponible.

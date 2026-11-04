@@ -1,6 +1,6 @@
 # Respaldos CER — preparación, activación y recuperación
 
-Estado al 28/10/2026: origen confirmado Proyecto-CER (`pnqsvmtmkceznoswpgfz`), destino confirmado Google Drive personal. Faltan OAuth de Drive y los secretos de GitHub. No existe todavía un backup remoto ni una restauración remota comprobada. No activar rotación hasta completar la primera restauración y el respaldo de Storage. Ver los pasos concretos en [ACTIVACION_DRIVE.md](ACTIVACION_DRIVE.md).
+Estado al 03/11/2026 (decisión más reciente): el destino es **Google Drive de cerresistencia@gmail.com**. Cloudflare R2 se descartó por requerir activar facturación. La programación diaria y configuración privada están preparadas localmente; falta completar OAuth, secretos, publicación autorizada y backup/restauración reales. Ver [ACTIVACION_DRIVE.md](ACTIVACION_DRIVE.md).
 
 ## Diseño
 El workflow diario genera roles, estructura, datos e historial de migraciones con la CLI oficial de Supabase fijada en package-lock. Incluye las políticas CER de Storage para recrearlas en un proyecto vacío. Comprime con tar/gzip y cifra con age usando solo la clave pública. Verifica estructura del archivo y hashes, sube el cifrado con rclone y vuelve a leerlo para comparar SHA-256. Solo después publica su manifiesto de éxito.
@@ -9,24 +9,23 @@ Los datos de CER y Auth salen de una única ejecución de `pg_dump --data-only`,
 
 La verificación estructural NO es una restauración. Se requiere restaurar periódicamente en un Supabase de pruebas vacío de versión compatible. No contiene Vault ni claves de cifrado externas: CER no los utiliza. Si se agregan, revisar el alcance según la documentación oficial.
 
-## Elegir destino
-- Drive personal: crear una aplicación OAuth en Google Cloud, habilitar Drive API, tipo Desktop, scope `drive.file`. Configurar rclone Drive con alcance `drive.file`; autorizar en el navegador propio. La app debe crear sus carpetas para poder leerlas con ese alcance. Pasar la pantalla OAuth a producción para evitar caducidad de tokens de apps externas en Testing. No compartir la carpeta públicamente.
-- Cloudflare R2: crear un bucket privado exclusivo y un token S3 limitado al bucket. Configurar rclone S3 con proveedor Cloudflare, endpoint de la cuenta y región auto. Activar bloqueo de bucket/versionado o retención cuando la configuración disponible lo permita; verificar compatibilidad de esa protección con la rotación.
-- No se creó ni autorizó ninguna aplicación externa. Nunca pegar tokens o claves privadas en el chat.
+## Destino Google Drive
 
-Para configurar rclone, ejecutar `rclone config` en el propio equipo: New remote → nombre cer → elegir Drive y autorización OAuth local, o S3/Cloudflare con endpoint y credenciales privadas. Ejecutar `rclone lsd cer:` para verificar el acceso sin listar datos de otros destinos. Crear una carpeta/bucket exclusivo y conservar el archivo de configuración únicamente en el gestor de secretos. En Drive, las credenciales de la app OAuth se ingresan en rclone, nunca aquí. En R2, limitar el token a ese bucket; no utilizar credenciales de toda la cuenta.
+Los workflows construyen el remote `cer-drive` con `configure-drive.mjs`: tipo Drive y alcance `drive.file`. La raíz es `cer-drive:Backups CER`. Se requiere cliente OAuth propio de CER por el retiro anunciado del cliente compartido de rclone en 2026. Se rechazan tokens sin refresh_token, opciones desconocidas y destinos heredados. La configuración se crea con modo 0600 y se limpia tras el job.
 
-Usar un remote de rclone llamado `cer` y una raíz exclusiva: `cer:Backups CER` (Drive) o `cer:bucket/Backups-CER` (R2). Configurar las carpetas `Diarios`, `Mensuales` y reservar `Registros-de-verificacion` para informes de restauración. Los manifiestos de verificación de cada backup se conservan junto a su archivo.
+Solicitar drive.file durante OAuth: solo permite acceder a archivos creados/abiertos por esa aplicación. Crear las carpetas con rclone, no desde la web: `Diarios`, `Mensuales`, `Archivos/Diarios` y `Archivos/Mensuales`. No hacer pública la carpeta. Los workflows las crean antes de generar copias.
+
+El token puede modificar y borrar los archivos de la aplicación, incluso en el job de monitoreo. Separar environments y proteger rotación no crea permisos de solo lectura del proveedor. `--immutable` tampoco es protección WORM. No se activa borrado permanente ni vaciado automático de la papelera.
+
+El monitor revisa cada seis horas el espacio total (Drive y otros servicios Google, sin duplicar papelera) y falla al alcanzar 85% para disparar el canal de alertas. Las cuotas gratuitas son limitadas: no hay contratación ni ampliación automática. La papelera también ocupa espacio; su revisión/vaciado requiere una decisión del responsable. Si se agota el espacio, la nueva copia falla y se debe investigar la alerta.
 
 ## Cifrado
 Instalar age desde su distribución oficial. Ejecutar `age-keygen -o age-identity.txt`. Guardar la identidad privada fuera del repositorio y fuera de GitHub Actions (gestor de contraseñas y copia offline). Guardar solo el destinatario público `age1…` en `CER_BACKUP_AGE_RECIPIENT`. Sin la identidad privada no es posible restaurar.
 
 ## GitHub
-Crear environments `cer-backups`, `cer-backup-rotation` y `cer-backups-monitor`. El environment de rotación debe tener aprobación manual inicialmente. Credenciales distintas para generación, lectura y borrado; si el proveedor OAuth no separa crear y borrar, conservar la credencial de rotación en un environment protegido y documentar que el aislamiento es operativo, no una garantía del proveedor.
+Crear environments `cer-backups`, `cer-backup-rotation` y `cer-backups-monitor`. Proteger rotación y restringir ramas que reciben secretos. Configurar `RCLONE_CONFIG_DRIVE` en los tres, más conexión SQL y fuente de fotos solo en generación, según [ENVIRONMENT.md](ENVIRONMENT.md).
 
-Variables: `CER_BACKUPS_ENABLED=false`, `CER_BACKUP_ROTATION_ENABLED=false`, `CER_RESTORE_TESTED=false`, `CER_BACKUP_REMOTE`, `CER_BACKUP_AGE_RECIPIENT`, `CER_SOURCE_PROJECT_REF`.
-
-Secrets: `CER_BACKUP_DATABASE_URL` (conexión PostgreSQL de sesión con TLS `sslmode=require`, contraseña percent-encoded), `RCLONE_CONFIG_CREATE`, `RCLONE_CONFIG_ROTATE`, `RCLONE_CONFIG_READ`. Son los contenidos de configuración de rclone; nunca se incluyen en la web. Webhook opcional `CER_ALERT_WEBHOOK` debe inyectarse en el paso Avisar fallo si se elige ese canal. Sin webhook, activar las notificaciones de fallos de Actions para el responsable.
+Los horarios diarios solicitados son 03:17 de Argentina para SQL y 03:47 para fotos. Ambos y la rotación comparten grupo de concurrencia. Funcionan con la computadora apagada. El monitor se ejecuta cada seis horas y vuelve a leer los bytes del backup reciente. Con webhook opcional `CER_ALERT_WEBHOOK` o notificaciones de fallos de Actions, el responsable recibe el fallo; se requiere comprobar ese canal.
 
 Activar solo generación tras una ejecución manual verificada. Conservar 30 diarios y 12 mensuales; mensual se crea el día 1 UTC. La rotación es otro job y requiere una copia reciente re-verificada y restauración aprobada. Nunca borra una copia si falla la generación. El monitor corre cada 6 horas y falla si no hay manifiesto correcto de menos de 36 horas. GitHub puede retrasar schedules y desactivarlos por inactividad; para garantía independiente, configurar además un watchdog externo una vez elegido el servicio. No depende de la MacBook.
 
@@ -41,18 +40,18 @@ Ejecutar scripts solo desde un entorno confiable con age, tar, rclone, psql y la
 6. Tras la primera prueba satisfactoria, habilitar `CER_RESTORE_TESTED=true`; valorar activar rotación.
 
 ## Fotografías y Storage — flujo independiente preparado
-Los dumps SQL incluyen metadatos, NO los bytes de fotografías. El script `scripts/backups/storage.mjs` y el workflow `storage-backup.yml` preparan otro flujo diario: lectura de `cer-evidence` mediante credencial de Storage de solo lectura, inventario path/tamaño/hash, copia completa de objetos inmutables, compresión y age, subida y verificación remota, y copia mensual/rotación independiente. Al restaurar, subir objetos con los mismos paths a un bucket privado y verificar todos los paths de `cer_attachments` antes de permitir acceso.
+Los dumps SQL incluyen metadatos, NO los bytes de fotografías. El script `scripts/backups/storage.mjs` y el workflow `storage-backup.yml` preparan otro flujo diario: lectura de `cer-evidence` mediante credenciales privadas de Storage, inventario path/tamaño/hash, copia completa de objetos inmutables, compresión y age, subida y verificación remota, y copia mensual/rotación independiente. Al restaurar, subir objetos con los mismos paths a un bucket privado y verificar todos los paths de `cer_attachments` antes de permitir acceso.
 
-Configurar un remote S3 de Supabase Storage limitado a lectura del bucket; confirmar que la cuenta y plan elegidos permiten esa conexión. Guardar fuente y destino en `RCLONE_CONFIG_STORAGE`; el script no usa una service_role en el navegador. Con otra sesión, el destino de restauración debe apuntar a un bucket vacío de un proyecto de pruebas diferente.
+Configurar el remote S3 `cer-source` de Supabase Storage según la guía de activación. Las claves S3 generadas por Supabase son privilegiadas y omiten RLS: no llamarlas credenciales de solo lectura. El script solo lee la fuente; limitar su uso al runner protegido. `RCLONE_CONFIG_STORAGE` contiene únicamente esa fuente y nunca se entrega al navegador. Con otra sesión, el destino de restauración debe apuntar a un bucket vacío de un proyecto de pruebas diferente.
 
 Comandos: `node scripts/backups/storage.mjs generate`, `monitor`, `rotate` y `restore`. La restauración requiere las variables documentadas en ENVIRONMENT, verifica inventario y hashes, copia sin sobrescribir y compara los bytes del destino. Nunca configurar como destino el bucket activo. La igualdad de nombres de remote no sustituye verificar su proyecto en el Dashboard.
 
-Variables adicionales: `CER_STORAGE_BACKUP_ENABLED=false` y `CER_STORAGE_REMOTE`. Secret `RCLONE_CONFIG_STORAGE`. Este flujo todavía no se activó ni se verificó: depende del proyecto y del destino. Hasta completarlo, los informes indican `storageIncluded=false` y `storageRestored=false`. No llamar a los dumps SQL un respaldo completo de CER si existen fotos. No activar la puesta en producción con este bloqueo abierto.
+Variables adicionales: `CER_STORAGE_BACKUP_ENABLED=false` y `CER_STORAGE_REMOTE`. Secret `RCLONE_CONFIG_STORAGE`. Este flujo todavía no se activó ni se verificó contra Google Drive: depende de configurar el proyecto y el destino. Hasta completarlo, los informes indican `storageIncluded=false` y `storageRestored=false`. No llamar a los dumps SQL un respaldo completo de CER si existen fotos. No activar la puesta en producción con este bloqueo abierto.
 
 ## Incidente de pérdida
 Detener escrituras, preservar el estado actual, identificar última copia correcta, restaurar en pruebas, comparar pérdidas y obtener aprobación antes de cualquier operación sobre producción. La pérdida potencial corresponde al tiempo transcurrido desde el último snapshot correcto, más cualquier archivo fuera del respaldo. Este script no ofrece sobrescritura automática de producción.
 
-Referencias: [Supabase backup/restore](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore), [Drive scopes](https://developers.google.com/workspace/drive/api/guides/api-specific-auth), [age](https://age-encryption.org/), [rclone](https://rclone.org/).
+Referencias: [Supabase backup/restore](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore), [Drive con rclone](https://rclone.org/drive/), [almacenamiento Google](https://support.google.com/drive/answer/6374270), [age](https://age-encryption.org/), [rclone](https://rclone.org/).
 
 ## Límites del procedimiento
 

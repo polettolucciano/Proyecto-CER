@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacidad · CER Backups</title><meta name="description" content="Cómo CER Backups accede, utiliza y conserva los datos de su conexión con Google Drive."><link rel="stylesheet" href="/backups/style.css"></head>
+<body>
+<a class="skip" href="#contenido">Ir al contenido</a>
+<header><a href="/backups/index.html">CER · Backups</a></header>
+<main id="contenido">
+<p class="eyebrow">Conexión con Google Drive</p>
+<h1>Privacidad de los backups.</h1>
+<p>Actualización: 3 de noviembre de 2026.</p>
+<p>Esta política describe la herramienta interna <strong>CER Backups</strong> y su conexión con Google Drive. Su finalidad es resguardar y recuperar los registros del sistema de mantenimiento de CER. El contacto responsable de esta conexión es <a href="mailto:cerresistencia@gmail.com">cerresistencia@gmail.com</a>.</p>
+<h2>Datos a los que accede</h2>
+<ul>
+<li>La dirección de correo de la cuenta autorizada, para comprobar que el respaldo se dirige a la cuenta prevista.</li>
+<li>Los archivos y carpetas específicos de Drive usados por la herramienta, incluyendo sus nombres, fechas, tamaños y contenido cifrado.</li>
+<li>La información de cuota de la cuenta, para vigilar el espacio disponible. Esto no implica leer correos ni fotografías de Google Fotos.</li>
+<li>Los tokens OAuth necesarios para mantener la autorización, concedida con el permiso <code>drive.file</code>.</li>
+</ul>
+<h2>Uso y almacenamiento</h2>
+<p>Los datos se utilizan para crear y verificar respaldos, detectar fallos, listar copias, gestionar su conservación y ejecutar recuperaciones autorizadas. No se usan con fines publicitarios, venta de datos ni entrenamiento de modelos de inteligencia artificial.</p>
+<p>La herramienta cifra los archivos con age antes de enviarlos a Drive. Las copias de base de datos y fotografías se preparan desde Supabase; su contenido puede incluir información operativa y las identidades de los usuarios del sistema. Los archivos descifrados se usan temporalmente durante generación o recuperación, en entornos de administración.</p>
+<p>Las credenciales de automatización se guardan en los secretos de entornos de GitHub Actions. Durante la configuración o recuperación también pueden existir archivos privados en el equipo del responsable. Los tokens y contraseñas no se incorporan al código público ni a la aplicación que se ejecuta en el navegador. La identidad privada de recuperación se custodia por separado de GitHub.</p>
+<h2>Servicios y acceso</h2>
+<p>Google Drive almacena las copias cifradas; GitHub Actions ejecuta los procesos; Supabase conserva la información operativa de origen. Estos proveedores intervienen en la prestación de la función de respaldo. Las carpetas de backups no se hacen públicas mediante esta herramienta. El acceso administrativo a los proveedores corresponde al responsable autorizado.</p>
+<h2>Conservación y eliminación</h2>
+<p>La conservación depende de la configuración autorizada por el responsable de CER. La política técnica preparada conserva 30 copias diarias y 12 mensuales cuando se habilita la rotación. El borrado automático permanece condicionado a verificar copias recientes y acreditar una recuperación. Los archivos enviados a la papelera de Drive siguen ocupando espacio hasta su eliminación por el responsable.</p>
+<p>El titular puede revocar el permiso de CER Backups desde las conexiones de su Cuenta de Google. La revocación detiene el acceso futuro y debe comunicarse al responsable para retirar las credenciales de automatización. No elimina por sí sola los archivos de respaldo ya guardados: su gestión se realiza desde Drive o mediante el responsable autorizado.</p>
+<h2>Consultas y cambios</h2>
+<p>Las consultas sobre acceso, conservación, revocación o eliminación se reciben en <a href="mailto:cerresistencia@gmail.com">cerresistencia@gmail.com</a>. Si cambia el uso de los datos o se requieren otros permisos, se actualizará esta información y se solicitará la autorización que corresponda antes de ampliar el acceso.</p>
+</main>
+<footer><a href="/backups/index.html">Información de CER Backups</a> · <a href="/">Aplicación CER</a></footer>
+</body></html>

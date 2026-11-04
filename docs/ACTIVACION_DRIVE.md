@@ -1,26 +1,32 @@
 # Activar los respaldos en Google Drive personal
 
-Este procedimiento todavía no se ejecutó. La web de inspección continúa sin ingreso y con datos de demostración. Ninguna credencial se pega en el chat ni se sube a Git.
+Destino confirmado por el usuario el 03/11/2026: **cerresistencia@gmail.com**. No requiere contratar un plan de pago; el espacio disponible debe vigilarse. Este procedimiento aún requiere acreditar OAuth, primera copia y recuperación. La web de inspección continúa sin ingreso y con datos de demostración. Ninguna credencial se pega en el chat ni se sube a Git.
 
 ## 1. Autorizar Google una sola vez
 
 En una computadora confiable instalar `rclone` y `age` desde sus distribuciones oficiales. La generación automática posterior ocurre en GitHub, aunque esta computadora esté apagada.
 
 1. Ejecutar `rclone config`.
-2. Crear un remote llamado `cer`, de tipo Google Drive.
+2. Crear un remote llamado `cer-drive`, de tipo Google Drive.
 3. Elegir el alcance `drive.file`: solo archivos creados o abiertos por esta aplicación. Usar el navegador propio para autorizar la cuenta personal. No hacer pública la carpeta.
-4. Se puede usar el cliente OAuth incorporado de rclone. Si se elige un cliente propio, habilitar Google Drive API, crear cliente OAuth de escritorio y sacar la aplicación del modo Testing; ese modo puede hacer caducar el refresh token. Ingresar sus credenciales únicamente en rclone.
+4. Usar un cliente OAuth **propio de CER**: el cliente compartido de rclone se retira durante 2026. En Google Cloud crear un proyecto sin facturación, habilitar Google Drive API, configurar consentimiento y crear un cliente OAuth de escritorio. Solicitar solo drive.file y pasar la aplicación a producción para evitar renovación semanal del permiso de Testing. Las condiciones de Google y el consentimiento los acepta el titular. No activar prueba gratuita, facturación ni productos de pago. Ingresar credenciales solo en la configuración privada.
 5. Crear el árbol con la misma aplicación autorizada:
 
 ```bash
-rclone mkdir 'cer:Backups CER/Diarios'
-rclone mkdir 'cer:Backups CER/Mensuales'
-rclone mkdir 'cer:Backups CER/Archivos/Diarios'
-rclone mkdir 'cer:Backups CER/Archivos/Mensuales'
-rclone mkdir 'cer:Backups CER/Registros-de-verificacion'
+rclone mkdir 'cer-drive:Backups CER/Diarios'
+rclone mkdir 'cer-drive:Backups CER/Mensuales'
+rclone mkdir 'cer-drive:Backups CER/Archivos/Diarios'
+rclone mkdir 'cer-drive:Backups CER/Archivos/Mensuales'
+rclone mkdir 'cer-drive:Backups CER/Registros-de-verificacion'
 ```
 
 Verificar estas carpetas desde Drive sin cambiar sus permisos. `drive.file` no equivale a credenciales separadas de lectura y borrado: usar environments protegidos en GitHub para la rotación.
+
+### Publicación de la conexión propia
+
+Google requiere completar Información de la marca con páginas públicas de presentación y privacidad. Las páginas preparadas en este proyecto son `/backups/index.html` y `/backups/privacidad.html`; se publican con aprobación y se verifican antes de ingresarlas en Google. No reemplazan una revisión de las políticas generales del centro.
+
+En el proyecto Google `cerresistencia`, el cliente de escritorio se llama `CER Backups diarios` y se solicita únicamente `https://www.googleapis.com/auth/drive.file`. Después de publicar la información de marca, pasar la conexión a producción y autorizar nuevamente con ese cliente. No usar para automatización durable el token de la prueba inicial realizada con el cliente compartido de rclone. La carpeta inicial se identifica como `CER - prueba de conexion`; no contiene un backup de CER.
 
 ## 2. Guardar la clave de recuperación
 
@@ -41,18 +47,35 @@ En Settings → Secrets and variables → Actions, crear las variables de reposi
 | Variable | Valor inicial |
 |---|---|
 | CER_SOURCE_PROJECT_REF | pnqsvmtmkceznoswpgfz |
-| CER_BACKUP_REMOTE | cer:Backups CER |
+| CER_STORAGE_REMOTE | cer-source:cer-evidence |
 | CER_BACKUP_AGE_RECIPIENT | El destinatario público age |
 | CER_BACKUPS_ENABLED | false |
 | CER_STORAGE_BACKUP_ENABLED | false |
 | CER_BACKUP_ROTATION_ENABLED | false |
 | CER_RESTORE_TESTED | false |
 
-En `cer-backups`: guardar `CER_BACKUP_DATABASE_URL` obtenida en Supabase Connect, con TLS `sslmode=require` y contraseña correctamente codificada. Guardar la configuración privada de rclone en `RCLONE_CONFIG_CREATE`. La ubicación local se consulta con `rclone config file`; copiar su contenido directamente a GitHub, sin enviarlo por chat.
+En `cer-backups`: guardar `CER_BACKUP_DATABASE_URL` obtenida en Supabase Connect, con TLS `sslmode=require` y contraseña correctamente codificada. Guardar solo la sección `[cer-drive]` de la configuración privada de rclone en `RCLONE_CONFIG_DRIVE`: type=drive, scope=drive.file y token JSON con refresh_token. Incluir obligatoriamente client_id y client_secret propios de CER. No incluir otras opciones o remotes. La ubicación local se consulta con `rclone config file`; copiar su contenido directamente a GitHub, sin enviarlo por chat.
 
-En `cer-backups-monitor`: `RCLONE_CONFIG_READ`. En `cer-backup-rotation`: `RCLONE_CONFIG_ROTATE`. Para Drive personal esas configuraciones pueden corresponder al mismo OAuth; el control de borrado depende del environment protegido. No declarar aislamiento de credenciales que Google no ofrece.
+En `cer-backups-monitor` y `cer-backup-rotation`: `RCLONE_CONFIG_DRIVE`. El destino se calcula automáticamente como `cer-drive:Backups CER`; no se usan secretos ni variables de R2. Para Drive personal esas configuraciones pueden corresponder al mismo OAuth; el control de borrado depende del environment protegido. No declarar aislamiento de credenciales que Google no ofrece.
 
-Para fotos, configurar un remote S3 de solo lectura del bucket privado `cer-evidence`, añadirlo junto al destino Drive en `RCLONE_CONFIG_STORAGE` del environment `cer-backups` y definir `CER_STORAGE_REMOTE`. No usar una clave privilegiada en la web. Las credenciales de Storage se obtienen privadamente en Supabase; su configuración y acceso todavía deben verificarse.
+Para fotos, configurar el remote S3 `cer-source` del bucket privado `cer-evidence` y guardar **solo esa sección** en `RCLONE_CONFIG_STORAGE` del environment `cer-backups`. Definir `CER_STORAGE_REMOTE=cer-source:cer-evidence`. Las claves S3 generadas por Supabase son privilegiadas y omiten RLS; el script solo lee la fuente, pero eso no limita los permisos de la clave. No usar una clave privilegiada en la web. Las credenciales de Storage se obtienen privadamente en Supabase; su configuración y acceso todavía deben verificarse.
+
+### Ejemplo de fuente S3 (ingresar valores reales privadamente)
+
+```ini
+[cer-source]
+type = s3
+provider = Other
+env_auth = false
+access_key_id = <clave S3 Supabase>
+secret_access_key = <secreto S3 Supabase>
+endpoint = https://pnqsvmtmkceznoswpgfz.storage.supabase.co/storage/v1/s3
+region = <región del proyecto>
+force_path_style = true
+no_check_bucket = true
+```
+
+El configurador añade Drive automáticamente. Crear los flags como variables **de repositorio**, ya que se evalúan antes de acceder al environment. No subir cambios a main sin autorización: puede desplegar Vercel automáticamente.
 
 ## 4. Primera ejecución y evidencia
 
@@ -63,7 +86,7 @@ Para fotos, configurar un remote S3 de solo lectura del bucket privado `cer-evid
 5. En GitHub → Settings → Notifications, activar avisos de Actions fallidos para el responsable. Para un canal adicional, configurar `CER_ALERT_WEBHOOK` directamente en cada environment que deba enviar avisos. Probar el canal deliberadamente antes de depender de él. Un fallo del scheduler de GitHub requiere vigilancia independiente; no se configuró un watchdog externo.
 6. Conservar fecha, ejecución de Actions y manifiestos como evidencia. No activar borrado todavía.
 
-Los horarios preparados son 03:17 de Argentina para SQL, 03:47 para archivos y un monitor cada seis horas. GitHub puede retrasar ejecuciones.
+Los horarios preparados son 03:17 de Argentina para SQL, 03:47 para archivos y un monitor cada seis horas. GitHub puede retrasar ejecuciones o desactivar schedules por inactividad. El monitor alerta al 85% de capacidad; incluye otros servicios Google y no duplica lo usado por la papelera. Las eliminaciones de rotación usan la papelera de Drive, que continúa ocupando espacio: no se vacía automáticamente ni se contratan ampliaciones.
 
 ## 5. Recuperar sin tocar producción
 

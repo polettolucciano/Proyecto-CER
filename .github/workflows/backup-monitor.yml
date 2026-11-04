@@ -13,7 +13,6 @@ jobs:
     environment: cer-backups-monitor
     env:
       CER_SOURCE_PROJECT_REF: ${{ vars.CER_SOURCE_PROJECT_REF }}
-      CER_BACKUP_REMOTE: ${{ vars.CER_BACKUP_REMOTE }}
       RCLONE_CONFIG: ${{ runner.temp }}/rclone.conf
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -23,12 +22,18 @@ jobs:
         with:
           node-version: '22'
       - run: sudo apt-get update && sudo apt-get install -y rclone
-      - env:
-          RCLONE_CONFIG_TEXT: ${{ secrets.RCLONE_CONFIG_READ }}
-        run: node -e 'require("fs").writeFileSync(process.env.RCLONE_CONFIG,process.env.RCLONE_CONFIG_TEXT,{mode:0o600})'
+      - name: Configurar Google Drive privado
+        env:
+          RCLONE_CONFIG_DRIVE: ${{ secrets.RCLONE_CONFIG_DRIVE }}
+        run: node scripts/backups/configure-drive.mjs
+      - name: Comprobar acceso al destino Drive
+        run: rclone lsf "$CER_BACKUP_REMOTE" --max-depth 1 > /dev/null
       - run: node scripts/backups/backup.mjs monitor
       - if: vars.CER_STORAGE_BACKUP_ENABLED == 'true'
         run: node scripts/backups/storage.mjs monitor
+      - name: Vigilar espacio gratuito de Google Drive
+        if: success() || failure()
+        run: node scripts/backups/drive-quota.mjs
       - name: Limpiar credenciales temporales
         if: always()
         run: rm -f -- "$RCLONE_CONFIG"

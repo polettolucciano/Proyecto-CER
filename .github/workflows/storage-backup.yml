@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: cer-storage-backup
+  group: cer-backups
   cancel-in-progress: false
 jobs:
   backup:
@@ -16,7 +16,6 @@ jobs:
     environment: cer-backups
     env:
       CER_STORAGE_REMOTE: ${{ vars.CER_STORAGE_REMOTE }}
-      CER_BACKUP_REMOTE: ${{ vars.CER_BACKUP_REMOTE }}
       CER_BACKUP_AGE_RECIPIENT: ${{ vars.CER_BACKUP_AGE_RECIPIENT }}
       CER_SOURCE_PROJECT_REF: ${{ vars.CER_SOURCE_PROJECT_REF }}
       RCLONE_CONFIG: ${{ runner.temp }}/rclone.conf
@@ -28,9 +27,19 @@ jobs:
         with:
           node-version: '22'
       - run: sudo apt-get update && sudo apt-get install -y age rclone
-      - env:
-          RCLONE_CONFIG_TEXT: ${{ secrets.RCLONE_CONFIG_STORAGE }}
-        run: node -e 'require("fs").writeFileSync(process.env.RCLONE_CONFIG,process.env.RCLONE_CONFIG_TEXT,{mode:0o600})'
+      - name: Configurar fuente de fotos y destino Google Drive
+        env:
+          RCLONE_CONFIG_DRIVE: ${{ secrets.RCLONE_CONFIG_DRIVE }}
+          RCLONE_CONFIG_STORAGE: ${{ secrets.RCLONE_CONFIG_STORAGE }}
+        run: node scripts/backups/configure-drive.mjs --storage
+      - name: Preparar carpetas privadas de fotografías
+        run: |
+          rclone mkdir "$CER_BACKUP_REMOTE/Archivos/Diarios"
+          rclone mkdir "$CER_BACKUP_REMOTE/Archivos/Mensuales"
+      - name: Comprobar acceso a Drive y fotografías
+        run: |
+          rclone lsf "$CER_BACKUP_REMOTE" --max-depth 1 > /dev/null
+          rclone lsf "$CER_STORAGE_REMOTE" --max-depth 1 > /dev/null
       - run: node scripts/backups/storage.mjs generate
       - name: Limpiar credenciales temporales
         if: always()

@@ -11,12 +11,12 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "typecheck": "tsc -b --pretty false",
-    "test": "vitest run src tests/imageOptimization.test.ts tests/requestBody.test.ts && node --test tests/backend.test.mjs tests/backups.test.mjs tests/invitations.test.mjs tests/evidence-handler.test.mjs",
+    "test": "vitest run src tests/imageOptimization.test.ts tests/requestBody.test.ts && node --test tests/backend.test.mjs tests/backups.test.mjs tests/r2.test.mjs tests/drive.test.mjs tests/invitations.test.mjs tests/evidence-handler.test.mjs",
     "test:images": "vitest run tests/imageOptimization.test.ts",
     "prepare:images": "node scripts/prepare-image-engine.mjs",
     "test:frontend": "vitest run src",
     "test:backend": "node --test tests/backend.test.mjs",
-    "test:backups": "node --test tests/backups.test.mjs",
+    "test:backups": "node --test tests/backups.test.mjs tests/r2.test.mjs tests/drive.test.mjs",
     "test:invitations": "node --test tests/invitations.test.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1"

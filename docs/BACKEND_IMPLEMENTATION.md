@@ -9,7 +9,7 @@ React 19 + Vite + TypeScript, formularios por dominio, IndexedDB mediante Worksp
 3. Auth con cuentas invitadas. Roles leídos de profiles; nunca de user_metadata ni del selector demo. RLS en todas las tablas expuestas. Escrituras solo por funciones controladas.
 4. Revisionado optimista global por transacción: ante un cambio concurrente se rechaza el guardado y se solicita recargar; no se sobrescribe silenciosamente. Propuesta inicial para unos 10 usuarios, pendiente de prueba remota de concurrencia; evolucionar a revisiones por agregado si la contención lo requiere.
 5. Fotografías en Storage privado, no en JSON/base64. Carga antes del commit; metadatos vinculados dentro de la transacción. No borrar adjuntos históricos.
-6. Respaldos diarios cifrados, generación separada de rotación y restauración aislada. Destino intercambiable Drive con OAuth/drive.file o R2 privado; ningún secreto en la aplicación.
+6. Respaldos diarios cifrados, generación separada de rotación y restauración aislada. Destino Google Drive privado de CER (última decisión del 03/11/2026); ningún secreto en la aplicación.
 
 ## Fases verificables
 - A: migraciones, validaciones, RLS y pruebas de permisos/integridad.
@@ -24,4 +24,4 @@ React 19 + Vite + TypeScript, formularios por dominio, IndexedDB mediante Worksp
 - Separación de turnos de Mixer y desinfección/rotación de Loop: se mantienen los formularios actuales.
 
 ## Dependencias externas
-Proyecto Supabase, remitente de invitaciones, primer administrador, destino Drive o R2, secretos de GitHub y proyecto de restauración aislado. No se modifica producción ni se importa la demo automáticamente.
+Proyecto Supabase, remitente de invitaciones, primer administrador, carpeta Google Drive, secretos de GitHub y proyecto de restauración aislado. No se modifica producción ni se importa la demo automáticamente.

@@ -18,24 +18,38 @@ cer-evidence usa las variables de Supabase suministradas por el runtime. `CER_AP
 
 APP_ORIGIN: origen exacto autorizado. Variables SUPABASE_URL, SUPABASE_ANON_KEY y SUPABASE_SERVICE_ROLE_KEY disponibles exclusivamente en el entorno de la función. Nunca imprimirlas ni ponerlas en Git.
 
-## GitHub Actions
+## GitHub Actions — Google Drive
 
-Variables de repositorio/environment:
+Destino actual: Drive de `cerresistencia@gmail.com`. No se requiere Cloudflare, tarjeta ni suscripción de pago. El espacio gratuito se comparte con Gmail/Fotos; no contratar ampliaciones automáticamente.
+
+Variables **de repositorio** (los flags se evalúan antes de entrar al environment):
 
 | Nombre | Contenido |
 |---|---|
-| CER_BACKUPS_ENABLED | false hasta verificar el primer backup |
+| CER_BACKUPS_ENABLED | false hasta preparar secretos y ejecutar/verificar manualmente |
 | CER_STORAGE_BACKUP_ENABLED | false hasta configurar fuente de fotos |
 | CER_BACKUP_ROTATION_ENABLED | false hasta probar recuperación |
 | CER_RESTORE_TESTED | true únicamente con evidencia de restauración |
-| CER_BACKUP_REMOTE | Raíz privada de destino rclone |
-| CER_STORAGE_REMOTE | Fuente rclone del bucket cer-evidence |
+| CER_STORAGE_REMOTE | cer-source:cer-evidence |
 | CER_BACKUP_AGE_RECIPIENT | Destinatario público age |
 | CER_SOURCE_PROJECT_REF | Referencia pública del proyecto respaldado |
 
-Secrets: CER_BACKUP_DATABASE_URL, RCLONE_CONFIG_CREATE, RCLONE_CONFIG_ROTATE, RCLONE_CONFIG_READ, RCLONE_CONFIG_STORAGE y CER_ALERT_WEBHOOK opcional. Los configs contienen credenciales: ingresarlos directamente en GitHub, nunca en el chat ni en el repositorio.
+Secrets por environment:
 
-RCLONE_CONFIG_STORAGE incluye fuente de solo lectura y destino de respaldo. READ solo lee el destino; ROTATE permite borrar exclusivamente el árbol de backups y debe permanecer en environment protegido.
+- `cer-backups`: `RCLONE_CONFIG_DRIVE`, `CER_BACKUP_DATABASE_URL` y `RCLONE_CONFIG_STORAGE`.
+- `cer-backups-monitor`: `RCLONE_CONFIG_DRIVE`.
+- `cer-backup-rotation`: `RCLONE_CONFIG_DRIVE`, con environment protegido.
+- `CER_ALERT_WEBHOOK` HTTPS opcional en cada environment que deba notificar.
+
+`RCLONE_CONFIG_DRIVE` contiene solo el remote `[cer-drive]`, `type = drive`, `scope = drive.file` y `token = <JSON OAuth con refresh_token>`. **Son obligatorios** `client_id` y `client_secret` propios de CER: rclone anunció el retiro de su cliente compartido en 2026. El flujo OAuth debe solicitar realmente drive.file; escribir el scope en el archivo no reduce los permisos de un token previamente emitido con acceso completo.
+
+El mismo OAuth puede utilizarse en los tres environments. Esto **no** aísla lectura de escritura: drive.file permite modificar/borrar los archivos de la aplicación. El aislamiento de rotación es operativo, no un permiso separado del proveedor. No introducir tokens en el chat, en Git ni en variables VITE_.
+
+`RCLONE_CONFIG_STORAGE` contiene únicamente `[cer-source]`, tipo S3, con credenciales privadas de Supabase. Sus claves S3 generadas omiten RLS y acceden a todos sus buckets; mantenerlas solo en el environment protegido. Ver ejemplo en [ACTIVACION_DRIVE.md](ACTIVACION_DRIVE.md).
+
+El runner crea configuración 0600 mediante `configure-drive.mjs` y exporta automáticamente `CER_BACKUP_REMOTE=cer-drive:Backups CER`. No configurar destinos R2 ni secrets CER_R2_ en estos workflows. Los configuradores R2 se conservan como alternativa inactiva y no son invocados por Actions.
+
+Para comandos manuales, exportar `RCLONE_CONFIG_DRIVE`, `CER_BACKUP_REMOTE=cer-drive:Backups CER` y `RCLONE_CONFIG` apuntando a un archivo **nuevo**, fuera del repositorio. Ejecutar `node scripts/backups/configure-drive.mjs`; añadir `--storage` con el secreto S3 cuando corresponda. Limpiar el config al terminar.
 
 ## Restauración manual aislada
 

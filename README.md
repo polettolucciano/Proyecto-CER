@@ -11,7 +11,7 @@ Hay dos modos separados:
 
 El proyecto remoto Proyecto-CER ya está vinculado y tiene las migraciones de estructura, Storage privado y optimización de fotografías aplicadas. La función de procesamiento está desplegada; consultar la evidencia actualizada en docs/PHOTO_OPTIMIZATION.md. Los workflows de respaldo siguen desactivados. Falta completar el primer administrador, los correos, los flujos operativos entre dispositivos y una restauración real. La versión publicada en Vercel sigue siendo la demo hasta un despliegue autorizado.
 
-Actualización 28/10/2026: se verificaron los flujos de backend con cuentas técnicas temporales. La corrección de conflictos de revisión se aplicó con autorización expresa y pasó la prueba concurrente real: HTTP 200 y HTTP 409/PT409, sin sobrescrituras. Por decisión del usuario, la inspección sigue sin ingreso en modo demo; Drive personal es el destino de backups confirmado. Ver [checklist y pruebas de entrega](docs/ESTADO_ENTREGA_2026-10-28.md), [guía de operación](docs/OPERACION_CER.md) y [activación de Drive](docs/ACTIVACION_DRIVE.md).
+Actualización 28/10/2026: se verificaron los flujos de backend con cuentas técnicas temporales. La corrección de conflictos de revisión se aplicó con autorización expresa y pasó la prueba concurrente real: HTTP 200 y HTTP 409/PT409, sin sobrescrituras. Por decisión del usuario, la inspección sigue sin ingreso en modo demo; Desde el 03/11/2026, el destino elegido para backups es Google Drive de CER; su activación y primera recuperación están pendientes. Ver [checklist y pruebas de entrega](docs/ESTADO_ENTREGA_2026-10-28.md), [guía de operación](docs/OPERACION_CER.md) y [activación de Google Drive](docs/ACTIVACION_DRIVE.md).
 
 ## Funcionalidades
 
@@ -47,7 +47,7 @@ Usar solo las comprobaciones relevantes para cada cambio. Las pruebas SQL emplea
 - [Arquitectura y esquema](docs/ARCHITECTURE.md)
 - [Supabase y usuarios](docs/SETUP_SUPABASE.md)
 - [Variables de entorno](docs/ENVIRONMENT.md)
-- [Backups, Drive/R2 y recuperación](docs/BACKUPS.md)
+- [Backups en Google Drive y recuperación](docs/BACKUPS.md)
 - [Despliegue, validación y reversión](docs/DEPLOYMENT.md)
 - [Optimización de fotografías y evidencia](docs/PHOTO_OPTIMIZATION.md)
 - [Evidencia de QA](docs/QA_BACKEND.md)
