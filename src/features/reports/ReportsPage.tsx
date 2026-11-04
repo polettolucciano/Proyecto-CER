@@ -1,13 +1,10 @@
 import { Fragment, useMemo, useState } from 'react';
-import { DownloadButton, Field, Icon, ModuleIcon, PageHeader } from '../../components';
+import { DownloadButton, Icon, ModuleIcon } from '../../components';
 import { modules } from '../../data';
-import { addDays, allowed, formatDate, today, visibleData } from '../../domain';
-import { exportAnnualProgram, exportRecords } from '../../export';
+import { allowed, visibleData } from '../../domain';
+import { exportAnnualProgram } from '../../export';
 import { useApp } from '../../store';
-import type { ModuleId } from '../../types';
 import { buildAnnualReport, currentReportYear, reportMonths, type AnnualCell } from './annualReport';
-
-type View = 'annual' | 'records';
 
 const stateText = {
   empty: 'Sin programación',
@@ -34,21 +31,14 @@ function ReportMetric({ icon, label, value, tone }: { icon: string; label: strin
 export function ReportsPage() {
   const { data, user, toast } = useApp();
   const visible = visibleData(data, user);
-  const [view, setView] = useState<View>('annual');
   const [year, setYear] = useState(currentReportYear);
   const [module, setModule] = useState<string>('all');
-  const [from, setFrom] = useState(addDays(today(), -30));
-  const [to, setTo] = useState(today());
   const [busy, setBusy] = useState(false);
   const yearTasks = useMemo(
     () => visible.tasks.filter(task => module === 'all' || task.module === module),
     [visible.tasks, module],
   );
   const annual = useMemo(() => buildAnnualReport({ ...data, records: visible.records }, yearTasks, year), [data, visible.records, yearTasks, year]);
-  const filteredRecords = useMemo(
-    () => visible.records.filter(record => record.status === 'active' && record.date >= from && record.date <= to && (module === 'all' || record.module === module)),
-    [visible.records, from, to, module],
-  );
   const currentMonth = currentReportYear() === year ? new Date().getMonth() : -1;
 
   async function downloadAnnual() {
@@ -63,38 +53,10 @@ export function ReportsPage() {
     }
   }
 
-  async function downloadFilteredRecords() {
-    setBusy(true);
-    try {
-      await exportRecords(filteredRecords, data);
-      toast(`Excel preparado con ${filteredRecords.length} registros.`);
-    } catch {
-      toast('No se pudo generar el archivo. Intentá nuevamente.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const linkedRecords = filteredRecords.filter(record => record.taskId).length;
-  const attention = filteredRecords.filter(record => record.result === 'attention').length;
-
   return <>
-    <PageHeader eyebrow="PROGRAMA PREVENTIVO · F-PME-00" title="Cronograma de mantenimiento" description="La planilla anual del centro, transformada en una vista clara, trazable y lista para exportar.">
-      <DownloadButton busy={busy} label={view === 'annual' ? 'Exportar programa' : 'Exportar registros'} onClick={() => void (view === 'annual' ? downloadAnnual() : downloadFilteredRecords())} />
-    </PageHeader>
-
-    <div className="report-view-tabs" role="tablist" aria-label="Tipo de informe">
-      <button role="tab" aria-selected={view === 'annual'} className={view === 'annual' ? 'active' : ''} onClick={() => setView('annual')}><Icon name="Grid2X2" size={16} />Programa anual</button>
-      <button role="tab" aria-selected={view === 'records'} className={view === 'records' ? 'active' : ''} onClick={() => setView('records')}><Icon name="FileText" size={16} />Registros por período</button>
-    </div>
-
-    {view === 'annual' ? <>
+    <div className="annual-actions"><p>Seguimiento anual de los controles programados.</p><DownloadButton busy={busy} label="Exportar cronograma" onClick={() => void downloadAnnual()} /></div>
       <section className="program-sheet" aria-labelledby="program-title">
-        <header className="program-sheet-header">
-          <div className="program-brand"><img src="/cer-logo.png" width="54" height="46" alt="" /><span><small>C.E.R.</small><strong>Centro de Enfermedades Renales</strong></span></div>
-          <div className="program-title"><small>Programa de mantenimiento preventivo</small><h2 id="program-title">Equipos e instalaciones</h2></div>
-          <div className="program-code"><span>Documento</span><strong>F-PME-00</strong></div>
-        </header>
+        <h2 id="program-title" className="annual-section-title">Cronograma anual <span>F-PME-00</span></h2>
         <div className="program-toolbar">
           <div className="year-switcher"><button className="icon-button" aria-label="Año anterior" onClick={() => setYear(value => value - 1)}><Icon name="ChevronLeft" /></button><span><small>Año del informe</small><strong>{year}</strong></span><button className="icon-button" aria-label="Año siguiente" onClick={() => setYear(value => value + 1)}><Icon name="ChevronRight" /></button></div>
           <label className="program-module-filter"><span>Módulo</span><select aria-label="Filtrar programa por módulo" value={module} onChange={event => setModule(event.target.value)}><option value="all">Todos los módulos</option>{modules.filter(item => allowed(user, item.id)).map(item => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
@@ -130,33 +92,6 @@ export function ReportsPage() {
         <div className="program-scroll-note"><Icon name="ArrowRight" size={14} />En celular, deslizá la tabla para consultar los 12 meses.</div>
       </section>
 
-      <div className="report-guidance-grid">
-        <section className="panel report-guidance"><div className="guidance-icon"><Icon name="FileSpreadsheet" /></div><div><h3>Fiel al informe original, más fácil de leer</h3><p>Conservamos categorías, responsable, frecuencia y meses. Cada celda se calcula desde la planificación y los registros vinculados; no se cargan cumplimientos ficticios.</p></div></section>
-        <section className="panel report-question"><div><Icon name="CheckCircle2" /><h3>Convención confirmada por CER</h3></div><p>Negro identifica lo pendiente, verde lo realizado correctamente y rojo lo no realizado o registrado con una falla u observación.</p></section>
-      </div>
-      {annual.summary.unlinkedRecords > 0 && <div className="report-data-note" role="note"><Icon name="CircleHelp" size={18} /><div><strong>{annual.summary.unlinkedRecords} registros de demostración no están vinculados a una tarea programada.</strong><span>Siguen disponibles en el historial, pero no se cuentan como cumplimiento mensual para evitar atribuciones incorrectas.</span></div></div>}
-    </> : <>
-      <section className="panel report-period-filters">
-        <Field label="Desde"><input type="date" value={from} max={to} onChange={event => setFrom(event.target.value)} /></Field>
-        <Field label="Hasta"><input type="date" value={to} min={from} onChange={event => setTo(event.target.value)} /></Field>
-        <Field label="Módulo"><select aria-label="Filtrar registros por módulo" value={module} onChange={event => setModule(event.target.value)}><option value="all">Todos los módulos</option>{modules.filter(item => allowed(user, item.id)).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
-        <div className="period-caption"><Icon name="CalendarDays" /><span>{formatDate(from)} — {formatDate(to)}</span></div>
-      </section>
-      <div className="report-metrics records-metrics">
-        <ReportMetric icon="FileCheck2" label="registros encontrados" value={filteredRecords.length} tone="navy" />
-        <ReportMetric icon="CheckCircle2" label="controles conformes" value={filteredRecords.length - attention} tone="green" />
-        <ReportMetric icon="TriangleAlert" label="con observaciones" value={attention} tone="amber" />
-        <ReportMetric icon="RefreshCw" label="vinculados al programa" value={linkedRecords} tone="blue" />
-      </div>
-      <section className="panel period-report-panel">
-        <div className="panel-heading"><div><h2>Actividad registrada</h2><p>Detalle por módulo dentro del período seleccionado.</p></div><button className="button primary small" disabled={busy} onClick={() => void downloadFilteredRecords()}><Icon name="ArrowDownToLine" size={16} />Descargar Excel</button></div>
-        {modules.filter(item => allowed(user, item.id) && (module === 'all' || module === item.id)).map(item => {
-          const records = filteredRecords.filter(record => record.module === item.id);
-          if (!records.length) return null;
-          return <div className="period-module-row" key={item.id}><ModuleIcon module={item.id} /><div><strong>{item.name}</strong><span>{records.length} {records.length === 1 ? 'registro' : 'registros'}</span></div><div className="period-result"><span>{records.filter(record => record.result === 'ok').length} conformes</span><span>{records.filter(record => record.result === 'attention').length} con observaciones</span></div></div>;
-        })}
-        {!filteredRecords.length && <div className="period-empty"><Icon name="FileText" size={28} /><strong>No hay registros en este período</strong><span>Modificá las fechas o elegí otro módulo.</span></div>}
-      </section>
-    </>}
+      <details className="annual-explanation"><summary>¿Cómo se calcula el cronograma?</summary><p>Se comparan la planificación y los controles vinculados a cada tarea. El historial conserva también los controles fuera de programación.</p>{annual.summary.unlinkedRecords > 0 && <p>{annual.summary.unlinkedRecords} controles sin tarea vinculada no se cuentan como cumplimiento de una tarea programada.</p>}</details>
   </>;
 }

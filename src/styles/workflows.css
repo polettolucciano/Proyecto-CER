@@ -129,3 +129,102 @@
   .sector-card { padding: 22px; }
   .sector-card .equipment-card-top { margin-bottom: 16px; }
 }
+
+/* Una sección por tarea: inicio, planificación, historial y capacitaciones. */
+.administration-navigation { margin-top:24px;padding-top:18px;border-top:1px solid #ffffff24; }
+.section-tabs { display:flex;gap:8px;border-bottom:1px solid var(--border);margin-bottom:24px;overflow-x:auto; }
+.section-tabs a { flex-shrink:0;padding:14px 18px;border-bottom:3px solid transparent;font-size:14px;font-weight:650;color:#61748a;text-decoration:none;white-space:nowrap; }
+.section-tabs a[aria-current="page"] { color:#193b65;border-bottom-color:#193b65; }
+.section-tabs a:hover { background:#edf3f8; }
+.section-tabs a:focus-visible { outline:3px solid #57bbb6;outline-offset:-3px; }
+.unified-mobile-navigation { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.sector-toolbar { display:flex;gap:18px;align-items:center;margin-bottom:22px;max-width:740px; }
+.sector-toolbar>.search-field { min-width:0; }
+.sector-filters { display:flex;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:22px;padding:18px;background:#fff;border:1px solid var(--border);border-radius:10px; }
+.sector-filters label { display:grid;gap:6px;min-width:180px;font-size:13px;flex:1; }
+.sector-card-heading { display:flex;align-items:center;justify-content:space-between;margin-bottom:18px; }
+.sector-card .sector-actions { margin-top:22px; }
+.sector-card .location { margin-bottom:auto; }
+.sector-status { display:flex;align-items:center;gap:6px;color:#8a5a20;font-size:12px;margin-top:12px; }
+.queue-filters { display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--border); }
+.queue-filters button,.period-shortcuts button { display:flex;align-items:center;gap:8px;padding:10px 13px;font-size:13px;border-radius:7px;color:#526982;min-height:44px; }
+.queue-filters button[aria-pressed="true"],.period-shortcuts button[aria-pressed="true"] { background:#e9f0f8;color:#193b65;font-weight:700; }
+.queue-filters button span { font-size:12px;min-width:20px;text-align:center; }
+.planning-task-row { display:flex;align-items:center;gap:16px;padding:20px;border-bottom:1px solid var(--border); }
+.planning-task-row:last-child { border-bottom:0; }
+.planning-task-copy { flex:1;min-width:0; }
+.planning-task-copy p { margin-top:6px;font-size:13px;color:#64768b;line-height:1.5; }
+.planning-task-date { display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:128px; }
+.planning-task-date>strong { font-size:13px;color:#334e6e; }
+.planning-task-row>.button { flex-shrink:0;min-height:44px; }
+.unified-calendar-nav { justify-content:center;flex-wrap:wrap;padding:18px; }
+.mobile-calendar-agenda { display:none; }
+.annual-actions,.team-actions { display:flex;justify-content:space-between;align-items:center;gap:16px;margin:0 0 20px; }
+.annual-actions p,.team-actions p { font-size:14px;color:#61748a; }
+.annual-section-title { display:flex;justify-content:space-between;gap:14px;padding:24px;font-size:20px;color:#193b65;border-bottom:1px solid var(--border); }
+.annual-section-title span { font-size:12px;font-weight:500;color:#64778c; }
+.annual-explanation,.role-help { margin:20px 0;font-size:13px;color:#5e7288;line-height:1.7; }
+.annual-explanation summary,.role-help summary { cursor:pointer;padding:10px 0;min-height:44px; }
+.annual-explanation p,.role-help p { padding:5px 0;max-width:760px; }
+.history-back { margin:0 0 18px; }
+.history-period-toolbar { margin-bottom:20px; }
+.period-shortcuts { display:inline-flex;gap:6px;flex-wrap:wrap; }
+.history-activity-summary { display:flex;gap:24px;flex-wrap:wrap;padding:18px 22px;background:#f8fafc;font-size:13px;color:#61758a;border-bottom:1px solid var(--border); }
+.history-activity-summary strong { color:#294b6b; }
+.unified-settings { grid-template-columns:minmax(0,780px); }
+.search-prompt { font-size:14px;color:#60768a;line-height:1.7;padding:22px 0 8px; }
+.public-library-intro { padding:35px 0 10px; }
+.public-library-intro h1 { font-size:clamp(28px,4vw,42px);color:#193b65;line-height:1.2; }
+.public-library-intro p { font-size:16px;color:#61748a;margin-top:14px;line-height:1.7; }
+@media(max-width:767px) {
+  .section-tabs { gap:0;margin-bottom:20px; }
+  .section-tabs a { font-size:13px;padding:13px 11px; }
+  .unified-mobile-navigation a span { font-size:10px; }
+  .sector-card { padding:20px; }
+  .sector-card h2 { font-size:18px; }
+  .sector-toolbar { gap:12px; }
+  .sector-toolbar>.text-button { font-size:12px; }
+  .queue-filters { gap:4px;padding:12px; }
+  .queue-filters button { padding:8px 10px;font-size:12px; }
+  .planning-task-row { display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;padding:18px 16px; }
+  .planning-task-row>.module-icon { align-self:start; }
+  .planning-task-date { grid-column:2;align-items:flex-start;min-width:0;flex-direction:row;flex-wrap:wrap;align-items:center; }
+  .planning-task-row>.button { grid-column:2;justify-self:start; }
+  .desktop-calendar { display:none; }
+  .mobile-calendar-agenda { display:block; }
+  .mobile-calendar-agenda section h2 { background:#f3f7fa;padding:13px 18px;font-size:14px;color:#355674;text-transform:capitalize; }
+  .mobile-calendar-agenda section button { display:flex;align-items:center;gap:12px;padding:16px;text-align:left;width:100%;min-height:64px;border-bottom:1px solid var(--border); }
+  .mobile-calendar-agenda section button>span:nth-child(2) { flex:1;min-width:0; }
+  .mobile-calendar-agenda strong { display:block;font-size:14px;line-height:1.5; }
+  .mobile-calendar-agenda small { display:block;font-size:12px;color:#61768b;margin-top:5px; }
+  .annual-actions,.team-actions { align-items:stretch;flex-direction:column; }
+  .history-activity-summary { gap:12px 18px;padding:16px;font-size:12px; }
+  .public-library-intro { padding-top:24px; }
+}
+.record-title-link { width:100%;min-height:44px; }
+.record-title-copy { display:flex;flex-direction:column;gap:5px;flex:1;min-width:0; }
+.record-title-link>.module-icon { flex:0 0 32px;width:32px; }
+.record-title-link>svg { flex-shrink:0; }
+.record-results-table th:last-child,.record-results-table td:last-child { width:auto;padding-right:22px; }
+@media(max-width:767px) {
+  .record-results { overflow:visible; }
+  .record-results-table { display:block;min-width:0!important;width:100%; }
+  .record-results-table thead { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%); }
+  .record-results-table tbody { display:block; }
+  .record-results-table tbody tr { display:grid;grid-template-columns:1fr;gap:12px;padding:18px 16px;border-bottom:1px solid var(--border); }
+  .record-results-table tbody tr:last-child { border-bottom:0; }
+  .record-results-table td,.record-results-table td:last-child { display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;border:0;padding:0;min-width:0;white-space:normal; }
+  .record-results-table td[data-label]::before { content:attr(data-label);font-size:12px;color:#63788f;flex-shrink:0; }
+  .record-results-table .record-title-link { min-width:0;padding-bottom:5px; }
+  .record-results-table .record-title-link strong { font-size:15px;line-height:1.5; }
+  .record-results-table .record-title-link small { font-size:11px;line-height:1.6;overflow-wrap:anywhere; }
+  .record-results-table .user-cell { font-size:12px;white-space:normal; }
+}
+
+@media(max-width:767px) { .record-results-table .badge { font-size:11px;padding:5px 8px; } }
+
+@media(max-width:767px) {
+  .section-tabs { display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);overflow:visible; }
+  .section-tabs a { text-align:center;white-space:normal;align-content:center; }
+  .planning-task-date .badge { font-size:11px; }
+}

@@ -15,7 +15,6 @@ export function PublicTrainingContent({materials:source,remote=false}:{materials
   const [category, setCategory] = useState(allCategories);
   const [submodule, setSubmodule] = useState('');
   const published = source.filter(material => material.published);
-  const categories = Array.from(new Set(published.map(material => material.category)));
   const materials = published.filter(material => (category === allCategories || material.category === category) && (!submodule || material.submodule === submodule) && `${material.title} ${material.description} ${material.category} ${material.submodule ?? ''}`.toLowerCase().includes(query.trim().toLowerCase()));
 
   return <div className="public-training-shell">
@@ -25,18 +24,10 @@ export function PublicTrainingContent({materials:source,remote=false}:{materials
     </header>
 
     <main className="public-training-main">
-      <section className="public-training-hero">
-        <div>
-          <span className="public-kicker"><Icon name="GraduationCap" size={15} />Acceso público</span>
-          <h1>Capacitaciones del Centro de Enfermedades Renales</h1>
-          <p>Materiales, videos y presentaciones reunidos por CER para acompañar el aprendizaje y la consulta.</p>
-          <div className="public-training-meta"><span><strong>{published.length}</strong> recursos publicados</span><span><strong>{categories.length}</strong> módulos</span></div>
-        </div>
-        <div className="public-training-visual" aria-hidden="true"><span><Icon name="BookOpen" size={48} /></span><i /><i /><i /></div>
-      </section>
+      <section className="public-library-intro"><h1>Capacitaciones</h1><p>Elegí un módulo y un tema para consultar los materiales de CER.</p></section>
 
       <section className="public-training-library" aria-labelledby="public-library-title">
-        <div className="public-training-heading"><div><span>Biblioteca CER</span><h2 id="public-library-title">Explorá los recursos disponibles</h2></div><label className="public-training-search"><Icon name="Search" size={17} /><input aria-label="Buscar capacitaciones" placeholder="Buscar por tema o título" value={query} onChange={event => setQuery(event.target.value)} />{query && <button type="button" aria-label="Limpiar búsqueda" onClick={() => setQuery('')}><Icon name="X" size={15} /></button>}</label></div>
+        <div className="public-training-heading"><div><span>Biblioteca CER</span><h2 id="public-library-title">Materiales disponibles</h2></div><label className="public-training-search"><Icon name="Search" size={17} /><input aria-label="Buscar capacitaciones" placeholder="Buscar por tema o título" value={query} onChange={event => setQuery(event.target.value)} />{query && <button type="button" aria-label="Limpiar búsqueda" onClick={() => setQuery('')}><Icon name="X" size={15} /></button>}</label></div>
         <TrainingModuleFilters materials={published} module={category} submodule={submodule} onChange={(nextModule, nextSubmodule) => { setCategory(nextModule); setSubmodule(nextSubmodule); }} />
 
         {materials.length > 0 ? <div className="public-training-grid">{materials.map(material => <article className="public-resource-card" key={material.id}>

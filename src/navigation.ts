@@ -8,29 +8,27 @@ export interface NavigationItem {
   group: 'Operación' | 'Conocimiento' | 'Administración';
 }
 
+/** Un destino por tarea. Las vistas complementarias viven dentro de su sección. */
 export const navigation: NavigationItem[] = [
-  { id: 'dashboard', label: 'Equipos y sectores', shortLabel: 'Inicio', icon: 'LayoutDashboard', group: 'Operación' },
+  { id: 'dashboard', label: 'Inicio', shortLabel: 'Inicio', icon: 'Grid2X2', group: 'Operación' },
   { id: 'planning', label: 'Planificación', shortLabel: 'Planificación', icon: 'CalendarDays', group: 'Operación' },
-  { id: 'records', label: 'Registros', shortLabel: 'Historial', icon: 'ClipboardCheck', group: 'Operación' },
-  { id: 'equipment', label: 'Administrar equipos', shortLabel: 'Equipos', icon: 'Wrench', group: 'Operación' },
-  { id: 'reports', label: 'Cronograma', shortLabel: 'Cronograma', icon: 'FileSpreadsheet', group: 'Operación' },
-  { id: 'training', label: 'Capacitaciones', shortLabel: 'Aprender', icon: 'BookOpen', group: 'Conocimiento' },
-  { id: 'summary', label: 'Resumen del centro', shortLabel: 'Resumen', icon: 'LayoutDashboard', group: 'Administración' },
-  { id: 'users', label: 'Personas y permisos', shortLabel: 'Personas', icon: 'Users', group: 'Administración' },
-  { id: 'settings', label: 'Configuración', shortLabel: 'Ajustes', icon: 'Settings2', group: 'Administración' },
+  { id: 'records', label: 'Historial', shortLabel: 'Historial', icon: 'ClipboardCheck', group: 'Operación' },
+  { id: 'training', label: 'Capacitaciones', shortLabel: 'Capacitaciones', icon: 'BookOpen', group: 'Conocimiento' },
+  { id: 'settings', label: 'Administración', shortLabel: 'Administración', icon: 'Settings2', group: 'Administración' },
 ];
-
 export const navigationGroups: NavigationItem['group'][] = ['Operación', 'Conocimiento', 'Administración'];
-
-/** Agrupación visual; los permisos siguen comprobándose por separado. */
-export function primaryNavigation(user: TeamUser): Page[] {
-  return user.role === 'Enfermería' ? ['dashboard', 'planning', 'records', 'training'] : ['dashboard', 'planning', 'records', 'reports'];
+export function primaryNavigation(_user: TeamUser): Page[] {
+  return ['dashboard', 'planning', 'records', 'training'];
 }
 
+/** Conserva enlaces anteriores sin mantener pantallas duplicadas. */
+export function canonicalDestination(page: Page): { page: Page; view?: string } {
+  if (page === 'equipment') return { page: 'dashboard' };
+  if (page === 'summary') return { page: 'records', view: 'recent' };
+  if (page === 'reports') return { page: 'planning', view: 'annual' };
+  if (page === 'users') return { page: 'settings', view: 'team' };
+  return { page };
+}
 export function pageLabel(page: Page, _user: TeamUser) {
-  if (page === 'dashboard') return 'Equipos y sectores';
-  if (page === 'planning') return 'Planificación';
-  if (page === 'records') return 'Historial';
-  if (page === 'reports') return 'Cronograma';
-  return navigation.find(item => item.id === page)?.label ?? 'CER Gestión';
+  return navigation.find(item => item.id === canonicalDestination(page).page)?.label ?? 'CER Gestión';
 }

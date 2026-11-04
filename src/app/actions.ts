@@ -2,7 +2,7 @@ import type { Equipment, MaintenanceRecord, ModuleId, Page, Task, TeamUser, Trai
 
 /** Comandos de interfaz disponibles para las pantallas y los diálogos. */
 export interface AppActions {
-  navigate: (page: Page, module?: ModuleId, equipmentId?: string) => void;
+  navigate: (page: Page, module?: ModuleId, equipmentId?: string, view?: string) => void;
   newRecord: (module?: ModuleId, task?: Task, equipmentId?: string) => void;
   viewRecord: (record: MaintenanceRecord) => void;
   editTask: (task?: Task) => void;

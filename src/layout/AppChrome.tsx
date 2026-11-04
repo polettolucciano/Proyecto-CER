@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Avatar, Icon } from '../components';
-import { canAccessPage } from '../domain';
+import { canAccessPage, canManage } from '../domain';
 import { navigation, pageLabel, primaryNavigation } from '../navigation';
 import type { Page, TeamUser } from '../types';
 import { useApp } from '../store';
@@ -15,9 +15,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPage, overdue, open, user, onClose, onNavigate }: SidebarProps) {
-  const {remote}=useApp();
   const primary = primaryNavigation(user);
-  const secondary = navigation.filter(item => (item.id !== 'equipment' || user.role === 'Administrador') && !primary.includes(item.id) && canAccessPage(user, item.id) && (user.role === 'Administrador' || item.group !== 'Administración'));
+  const secondary = navigation.filter(item => !primary.includes(item.id) && canAccessPage(user, item.id) && (user.role === 'Administrador' || item.group !== 'Administración'));
   const links = (items: typeof navigation) => items.map(item => (
     <a key={item.id} href={`#${item.id}`} className={`nav-item ${currentPage === item.id ? 'active' : ''}`} aria-current={currentPage === item.id ? 'page' : undefined} onClick={() => onNavigate(item.id)}>
       <Icon name={item.icon} size={20} /><span>{pageLabel(item.id, user)}</span>
@@ -35,17 +34,10 @@ export function Sidebar({ currentPage, overdue, open, user, onClose, onNavigate 
 
         <nav aria-label="Navegación principal">
           <div className="nav-group">{links(navigation.filter(item => primary.includes(item.id) && canAccessPage(user, item.id)))}</div>
-          <details className="secondary-navigation" key={`${user.id}-${secondary.some(item => item.id === currentPage)}`} open={secondary.some(item => item.id === currentPage) || undefined}>
-            <summary><Icon name="SlidersHorizontal" size={18} />{user.role === 'Administrador' ? 'Administración y más' : 'Más herramientas'}<Icon name="ChevronDown" size={15} /></summary>
-            {links(secondary)}
-          </details>
+          {canManage(user) && <div className="administration-navigation">{links(secondary)}</div>}
         </nav>
 
         <div className="sidebar-bottom">
-          <div className="demo-card">
-            <span className="demo-card-icon"><Icon name="Monitor" size={18} /></span>
-            <div><strong>{remote?'CER conectado':'Versión de demostración'}</strong><p>{remote?'Sesión personal. Datos compartidos del centro.':'Los cambios se guardan solamente en este navegador.'}</p></div>
-          </div>
           <div className="sidebar-footer"><span className="live-dot" /><span>Sistema CER</span><small>v0.3</small></div>
         </div>
       </aside>
@@ -55,12 +47,10 @@ export function Sidebar({ currentPage, overdue, open, user, onClose, onNavigate 
 
 interface TopbarProps {
   currentPage: Page;
-  overdue: number;
   profileOpen: boolean;
   user: TeamUser;
   users: TeamUser[];
   onMenu: () => void;
-  onNotifications: () => void;
   onProfileChange: (userId: string) => void;
   onProfileToggle: () => void;
   onSearch: () => void;
@@ -88,9 +78,6 @@ export function Topbar(props: TopbarProps) {
       <div className="topbar-actions">
         <button className="global-search" onClick={props.onSearch} aria-label="Buscar en CER">
           <Icon name="Search" size={18} /><span>Buscar equipo, tarea o registro</span><kbd>⌘ K</kbd>
-        </button>
-        <button className="icon-button notification-button" aria-label={`${props.overdue} tareas vencidas`} onClick={props.onNotifications}>
-          <Icon name="Bell" size={20} />{props.overdue > 0 && <i />}
         </button>
         <div className="profile-menu" ref={profileRef}>
           <button className="profile-trigger" aria-label={remote?'Abrir menú de cuenta':'Abrir perfiles de demostración'} aria-expanded={props.profileOpen} onClick={props.onProfileToggle}>
@@ -120,29 +107,16 @@ export function Topbar(props: TopbarProps) {
 interface MobileNavigationProps {
   user: TeamUser;
   currentPage: Page;
-  onMenu: () => void;
   onNavigate: (page: Page) => void;
-  onNewRecord: () => void;
 }
 
-export function MobileNavigation({ user, currentPage, onMenu, onNavigate, onNewRecord }: MobileNavigationProps) {
-  const items: Array<{ page: Page; label: string; icon: string }> = [
-    { page: 'dashboard', label: 'Sectores', icon: 'LayoutDashboard' },
-    { page: 'planning', label: 'Planificación', icon: 'CalendarDays' },
-    { page: 'records', label: 'Historial', icon: 'ClipboardCheck' },
-  ];
-  return (
-    <nav className="mobile-navigation" aria-label="Navegación móvil">
-      {items.slice(0, 2).map(item => (
-        <a key={item.page} href={`#${item.page}`} className={currentPage === item.page ? 'active' : ''} onClick={() => onNavigate(item.page)}>
-          <Icon name={item.icon} size={21} /><span>{item.label}</span>
-        </a>
-      ))}
-      <button className="mobile-create" onClick={onNewRecord} aria-label="Registrar nuevo control"><Icon name="Plus" size={25} /><span>Registrar</span></button>
-      <a href="#records" className={currentPage === 'records' ? 'active' : ''} onClick={() => onNavigate('records')}>
-        <Icon name="ClipboardCheck" size={21} /><span>Historial</span>
-      </a>
-      <button className="mobile-more" onClick={onMenu}><Icon name="MoreHorizontal" size={22} /><span>Más</span></button>
-    </nav>
-  );
+export function MobileNavigation({ user, currentPage, onNavigate }: MobileNavigationProps) {
+  const primary = primaryNavigation(user);
+  return <nav className="mobile-navigation unified-mobile-navigation" aria-label="Navegación móvil">
+    {navigation.filter(item => primary.includes(item.id) && canAccessPage(user, item.id)).map(item =>
+      <a key={item.id} href={`#${item.id}`} aria-current={currentPage === item.id ? 'page' : undefined} className={currentPage === item.id ? 'active' : ''} onClick={() => onNavigate(item.id)}>
+        <Icon name={item.icon} size={21} /><span>{item.shortLabel}</span>
+      </a>,
+    )}
+  </nav>;
 }
