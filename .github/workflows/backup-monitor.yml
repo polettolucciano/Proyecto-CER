@@ -13,8 +13,9 @@ jobs:
     environment: cer-backups-monitor
     env:
       CER_SOURCE_PROJECT_REF: ${{ vars.CER_SOURCE_PROJECT_REF }}
-      RCLONE_CONFIG: ${{ runner.temp }}/rclone.conf
     steps:
+      - name: Definir ruta privada de configuración
+        run: echo "RCLONE_CONFIG=$RUNNER_TEMP/rclone.conf" >> "$GITHUB_ENV"
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false

@@ -43,3 +43,9 @@ Guía actual: [ACTIVACION_DRIVE.md](ACTIVACION_DRIVE.md). No se modificó produc
 El usuario aceptó la política de datos de Google y autorizó crear el cliente CER Backups diarios y guardar la configuración en GitHub Secrets. Cliente de escritorio creado en cerresistencia, secreto descargado/protegido; alcance drive.file guardado como único permiso no sensible. Google mantiene la aplicación en Testing y bloquea Publicar app hasta completar página principal y privacidad. Se prepararon public/backups/index.html y public/backups/privacidad.html, revisadas localmente; publicación pendiente de autorización por afectar el despliegue de Vercel.
 
 Se preparó la identidad de recuperación en Documents/CER-Recuperacion/cer-backup-identity.txt con modo 0600 y directorio 0700, fuera del repositorio. GitHub contiene únicamente el destinatario público. age v1.3.2 oficial verificado con SHA-256; prueba local de cifrado/descifrado aprobada con texto sin datos reales. El responsable debe custodiar otra copia segura/offline de la identidad antes de depender del sistema.
+
+## Validación de publicación y corrección de Actions
+
+El usuario autorizó publicar en main el 03/11/2026. El commit ce30e8e se publicó y Vercel confirmó READY; se verificaron en navegador las páginas públicas /backups/index.html y /backups/privacidad.html.
+
+GitHub rechazó los workflows al validarlos: runner.temp no está disponible en jobs.<job_id>.env. La sintaxis YAML válida no detectaba ese error de contexto. Se trasladó la definición de RCLONE_CONFIG al primer paso de cada job, usando RUNNER_TEMP y GITHUB_ENV. actionlint v1.7.12 oficial, con SHA-256 verificado, aprobó los tres workflows corregidos. Los flags continúan en false; una ejecución omitida no acredita un backup.
