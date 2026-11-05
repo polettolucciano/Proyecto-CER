@@ -68,12 +68,16 @@ Deno.serve(async request => {
 
     const form = await boundedForm(request);
     const module = form.get('module'), operationId = form.get('operationId'), photoId = form.get('photoId'), file = form.get('file');
-    if (typeof module !== 'string' || !modules.has(module) ||
+    if (typeof module !== 'string' || (!modules.has(module) && !/^custom-[a-f0-9-]{36}$/.test(module)) ||
         typeof operationId !== 'string' || !uuid.test(operationId) ||
         typeof photoId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(photoId) || !(file instanceof File)) return respond(400,{message:'Revisá los datos de la fotografía.'});
     if (profile.role !== 'Administrador' && !profile.modules.includes(module)) return respond(403,{message:'No tenés acceso a ese módulo.'});
     if (!file.size || file.size > MAX_INPUT_BYTES || !['image/jpeg','image/png','image/webp'].includes(file.type)) return respond(400,{message:'Usá JPG, PNG o WebP de hasta 5 MB.'});
 
+    if (module.startsWith('custom-')) {
+      const {data:definition,error:moduleError}=await caller.from('cer_modules').select('id').eq('id',module).single();
+      if(moduleError || definition?.id!==module)return respond(400,{message:'Ese módulo no está disponible.'});
+    }
     await loadEngine();
     const bytes = new Uint8Array(await file.arrayBuffer());
     const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(b => b.toString(16).padStart(2,'0')).join('');

@@ -1,11 +1,12 @@
 import { Icon } from '../../components';
-import { modules } from '../../data';
+import { workspaceModules } from '../../data';
 import { allowed } from '../../domain';
 import { useApp } from '../../store';
 
 export function ModuleSelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  const { user } = useApp();
-  return <select aria-label="Filtrar por módulo" value={value} onChange={event => onChange(event.target.value)}><option value="all">Todos los módulos</option>{modules.filter(module => allowed(user, module.id)).map(module => <option key={module.id} value={module.id}>{module.name}</option>)}</select>;
+  const { data, user } = useApp();
+  const catalog = workspaceModules(data);
+  return <select aria-label="Filtrar por módulo" value={value} onChange={event => onChange(event.target.value)}><option value="all">Todos los módulos</option>{catalog.filter(module => allowed(user, module.id)).map(module => <option key={module.id} value={module.id}>{module.name}</option>)}</select>;
 }
 
 export function SearchField({ value, onChange, placeholder = 'Buscar…' }: { value: string; onChange: (value: string) => void; placeholder?: string }) {

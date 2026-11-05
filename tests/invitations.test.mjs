@@ -11,7 +11,7 @@ const origin='https://cer-preview.example.test';
 const input={name:'Enfermería de prueba',email:'nurse@example.test',role:'Enfermería',modules:['generator']};
 function service({signedIn=true,role='Administrador',active=true,conflicts=0,inviteFails=false,saveFails=false}={}){
  let handler,invitations=0,saves=0;
- const caller={auth:{getUser:async()=>({data:{user:signedIn?{id:'admin-id'}:null},error:signedIn?null:{}})},from:table=>({select:()=>({eq:()=>({single:async()=>({data:{role,active}})}),single:async()=>({data:{revision:1}})})}),rpc:async()=>{saves++;return {error:conflicts-- >0?{code:'PT409'}:saveFails?{code:'42501'}:null};}};
+ const caller={auth:{getUser:async()=>({data:{user:signedIn?{id:'admin-id'}:null},error:signedIn?null:{}})},from:table=>table==='cer_modules'?{select:async()=>({data:[{id:'generator'},{id:'custom-00000000-0000-4000-8000-000000000004'}],error:null})}:({select:()=>({eq:()=>({single:async()=>({data:{role,active}})}),single:async()=>({data:{revision:1}})})}),rpc:async()=>{saves++;return {error:conflicts-- >0?{code:'PT409'}:saveFails?{code:'42501'}:null};}};
  const admin={auth:{admin:{inviteUserByEmail:async()=>{invitations++;return inviteFails?{error:{},data:{}}:{data:{user:{id:'nurse-id'}}};}}}};
  vm.runInNewContext(javascript,{Deno:{env:{get:key=>key==='APP_ORIGIN'?origin:key==='SUPABASE_SERVICE_ROLE_KEY'?'server-only':'public'},serve:fn=>{handler=fn;}},createClient:(_url,key)=>key==='server-only'?admin:caller,Request,Response,crypto,TextDecoder,Uint8Array});
  return {invoke:(body=input,extra={})=>handler(new Request(origin,{method:'POST',headers:{origin,'Content-Type':'application/json',...extra.headers},body:typeof body==='string'?body:JSON.stringify(body)})),counts:()=>({invitations,saves})};
@@ -39,4 +39,7 @@ test('invitaciones: rechaza solicitudes grandes, multibyte y tipos falsos antes 
  assert.equal((await s.invoke('é'.repeat(11000))).status,413);
  assert.equal((await s.invoke(input,{headers:{'Content-Type':'text/plain'}})).status,415);
  assert.equal(s.counts().invitations,0);
+});
+test('invitaciones: admite un operador con acceso a un módulo del catálogo dinámico',async()=>{
+ const s=service();const response=await s.invoke({...input,role:'Operador',modules:['custom-00000000-0000-4000-8000-000000000004']});assert.equal(response.status,200);assert.equal(s.counts().invitations,1);
 });

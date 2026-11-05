@@ -12,6 +12,7 @@ before(async()=>{
  await db.exec(await readFile(new URL('../supabase/migrations/20261028231130_conflict_http_status.sql',import.meta.url),'utf8'));
  await db.exec("create function public.rls_auto_enable() returns event_trigger language plpgsql security definer as $$begin end$$;");
  await db.exec(await readFile(new URL('../supabase/migrations/20261102194118_security_validation.sql',import.meta.url),'utf8'));
+ await db.exec(await readFile(new URL('../supabase/migrations/20261105174159_maintenance_administration.sql',import.meta.url),'utf8'));
  await db.query(`insert into auth.users values($1,'admin@example.test'),($2,'nurse@example.test'),($3,'inactive@example.test')`,[admin,nurse,inactive]);
  await db.query(`insert into cer_profiles(id,name,email,role,modules,active) values($1,'Admin','admin@example.test','Administrador','{}',true),($2,'Nurse','nurse@example.test','Enfermería',array['generator'],true),($3,'Inactive','inactive@example.test','Enfermería',array['generator'],false)`,[admin,nurse,inactive]);
 });
@@ -138,4 +139,41 @@ test('los metadatos de equipos y tareas no admiten objetos que puedan convertirs
 test('la función automática de RLS conserva su dueño pero no se ofrece como RPC a usuarios',async()=>{
  const [permissions]=(await db.query("select has_function_privilege('anon','public.rls_auto_enable()','EXECUTE') anonymous,has_function_privilege('authenticated','public.rls_auto_enable()','EXECUTE') signedin,has_function_privilege(current_user,'public.rls_auto_enable()','EXECUTE') owner")).rows;
  assert.equal(permissions.anonymous,false);assert.equal(permissions.signedin,false);assert.equal(permissions.owner,true);
+});
+const customModule='custom-00000000-0000-4000-8000-000000000004';
+const operator='00000000-0000-4000-8000-000000000004';
+test('módulos: solo admin crea, plantilla validada y responsable con acceso al módulo',async()=>{
+ const command={kind:'module',data:{id:customModule,name:'Climatización de prueba',description:'Mantenimiento general',frequency:'Mensual',sections:[],responsibleId:admin}};
+ await assert.rejects(()=>apply(nurse,[command]),/ADMIN_REQUIRED/);
+ await apply(admin,[command]);
+ const saved=(await db.query('select definition from cer_modules where id=$1',[customModule])).rows[0].definition;
+ assert.equal(saved.name,command.data.name);assert.ok(saved.sections.flatMap(section=>section.fields).some(field=>field.id==='work' && !field.optional));
+ await assert.rejects(()=>apply(admin,[{...command,data:{...command.data,responsibleId:nurse}}]),/INVALID_ASSIGNEE/);
+ const workspace=(await asUser(admin,'select cer_workspace() data'))[0].data;assert.ok(workspace.modules.some(module=>module.id===customModule));
+ await db.query('insert into auth.users values($1,$2)',[operator,'operator@example.test']);
+ await apply(admin,[{kind:'profile',data:{id:operator,name:'Técnico nombrado',role:'Operador',modules:[customModule],active:true}}]);
+ await apply(admin,[{...command,data:{...command.data,responsibleId:operator}},{kind:'equipment',data:{...equipment('CUSTOM-EQ',customModule).data,responsibleId:operator}}]);
+ assert.equal((await asUser(operator,'select id from cer_equipment')).length,1);
+ await assert.rejects(()=>apply(admin,[{kind:'profile',data:{id:operator,name:'Técnico nombrado',role:'Operador',modules:['unknown'],active:true}}]),/INVALID_MODULE/);
+});
+test('cancelaciones: una fecha mantiene recurrencia, autoría, idempotencia y registros previos',async()=>{
+ const task={id:'cancel-monthly',title:'Control custom mensual',module:customModule,equipmentId:'CUSTOM-EQ',assignedTo:operator,frequency:'Mensual',due:'2026-01-31',scheduleBasis:'planned',active:true,notes:''};
+ await apply(admin,[{kind:'task',data:task}]);
+ const cancellation={kind:'cancel-task',data:{id:task.id,date:'2026-01-31',scope:'date',reason:'Equipo fuera de servicio'}};
+ await assert.rejects(()=>apply(operator,[cancellation]),/ADMIN_REQUIRED/);
+ const op=crypto.randomUUID(),revision=(await db.query('select revision from cer_settings')).rows[0].revision;
+ await apply(admin,[cancellation],{op,revision});await apply(admin,[cancellation],{op,revision});
+ let saved=(await db.query('select due::text due,data from cer_tasks where id=$1',[task.id])).rows[0];
+ assert.equal(saved.due,'2026-02-28');assert.equal(saved.data.cancellations.length,1);assert.equal(saved.data.cancellations[0].cancelledBy,admin);
+ await apply(admin,[{kind:'cancel-task',data:{id:task.id,date:'2026-03-31',scope:'date',reason:'Servicio no disponible ese día'}}]);
+ const genericRecord=(id,date)=>record(id,{module:customModule,equipmentId:'CUSTOM-EQ',taskId:task.id,date,values:{work:'Control realizado'},userId:admin});
+ await assert.rejects(()=>apply(operator,[genericRecord('cancelled-date-record','2026-01-31')]),/CONTROL_CANCELLED/);
+ await apply(operator,[genericRecord('custom-completed','2026-02-28')]);
+ saved=(await db.query('select due::text due,data from cer_tasks where id=$1',[task.id])).rows[0];assert.equal(saved.due,'2026-04-30');
+ assert.equal((await db.query("select user_id from cer_records where id='custom-completed'")).rows[0].user_id,operator);
+ await assert.rejects(()=>apply(admin,[{kind:'task',data:{...task,due:saved.due,cancellations:[]}}]),/INVALID_CANCELLATION_HISTORY/);
+ await apply(admin,[{kind:'cancel-task',data:{id:task.id,date:'2026-04-30',scope:'series',reason:'Retiro definitivo de la programación'}}]);
+ saved=(await db.query('select data from cer_tasks where id=$1',[task.id])).rows[0];assert.equal(saved.data.active,false);
+ assert.equal((await db.query("select count(*)::int n from cer_records where id='custom-completed'")).rows[0].n,1);
+ assert.equal((await db.query("select count(*)::int n from cer_audit_events where entity_id=$1 and action='task.cancelled'",[task.id])).rows[0].n,3);
 });

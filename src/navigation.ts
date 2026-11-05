@@ -13,12 +13,11 @@ export const navigation: NavigationItem[] = [
   { id: 'dashboard', label: 'Inicio', shortLabel: 'Inicio', icon: 'Grid2X2', group: 'Operación' },
   { id: 'planning', label: 'Planificación', shortLabel: 'Planificación', icon: 'CalendarDays', group: 'Operación' },
   { id: 'records', label: 'Historial', shortLabel: 'Historial', icon: 'ClipboardCheck', group: 'Operación' },
-  { id: 'training', label: 'Capacitaciones', shortLabel: 'Capacitaciones', icon: 'BookOpen', group: 'Conocimiento' },
   { id: 'settings', label: 'Administración', shortLabel: 'Administración', icon: 'Settings2', group: 'Administración' },
 ];
 export const navigationGroups: NavigationItem['group'][] = ['Operación', 'Conocimiento', 'Administración'];
 export function primaryNavigation(_user: TeamUser): Page[] {
-  return ['dashboard', 'planning', 'records', 'training'];
+  return ['dashboard', 'planning', 'records'];
 }
 
 /** Conserva enlaces anteriores sin mantener pantallas duplicadas. */

@@ -4,6 +4,7 @@ import { Icon } from './components';
 import { allowed, canAccessPage, canManage, canPlan, today, visibleData } from './domain';
 import { EquipmentForm } from './features/equipment/EquipmentForm';
 import { EquipmentPage } from './features/equipment/EquipmentPage';
+import { CancelControlForm } from './features/planning/CancelControlForm';
 import { TaskForm } from './features/planning/TaskForm';
 import { PlanningPage } from './features/planning/PlanningPage';
 import { OperationalRecordForm } from './features/records/OperationalRecordForm';
@@ -24,7 +25,8 @@ type Dialog =
   | { type: 'record'; module?: ModuleId; task?: Task; equipmentId?: string; sourceRecord?: MaintenanceRecord }
   | { type: 'record-detail'; record: MaintenanceRecord }
   | { type: 'task'; task?: Task }
-  | { type: 'task-detail'; task: Task }
+  | { type: 'task-detail'; task: Task; context?: { date?: string; month?: string } }
+  | { type: 'cancel-task'; task: Task; date: string }
   | { type: 'equipment'; equipment?: Equipment }
   | { type: 'equipment-detail'; equipment: Equipment }
   | { type: 'user'; user?: TeamUser }
@@ -76,7 +78,8 @@ export default function App() {
     newRecord: (module, task, equipmentId) => { if (!module || allowed(user, module)) setDialog({ type: 'record', module, task, equipmentId }); },
     viewRecord: record => { if (allowed(user, record.module)) setDialog({ type: 'record-detail', record }); },
     editTask: task => { if (canPlan(user)) setDialog({ type: 'task', task }); },
-    viewTask: task => { if (allowed(user, task.module)) setDialog({ type: 'task-detail', task }); },
+    viewTask: (task, context) => { if (allowed(user, task.module)) setDialog({ type: 'task-detail', task, context }); },
+    cancelTask: (task, date) => { if (canManage(user)) setDialog({ type: 'cancel-task', task, date }); },
     editEquipment: equipment => { if (canManage(user)) setDialog({ type: 'equipment', equipment }); },
     viewEquipment: equipment => { if (allowed(user, equipment.module)) setDialog({ type: 'equipment-detail', equipment }); },
     editUser: selectedUser => { if (canManage(user)) setDialog({ type: 'user', user: selectedUser }); },
@@ -122,11 +125,12 @@ export default function App() {
 
       {dialog?.type === 'record' && <OperationalRecordForm initialModule={dialog.module} initialEquipment={dialog.equipmentId} task={dialog.task} sourceRecord={dialog.sourceRecord} onClose={closeDialog} />}
       {dialog?.type === 'record-detail' && <RecordDetail record={dialog.record} onClose={closeDialog} onCorrect={() => setDialog({ type: 'record', sourceRecord: dialog.record })} />}
+      {dialog?.type === 'cancel-task' && canManage(user) && <CancelControlForm task={dialog.task} date={dialog.date} onClose={closeDialog} />}
       {dialog?.type === 'task' && canPlan(user) && <TaskForm task={dialog.task} onClose={closeDialog} />}
       {dialog?.type === 'equipment' && canManage(user) && <EquipmentForm equipment={dialog.equipment} onClose={closeDialog} />}
       {dialog?.type === 'user' && canManage(user) && <UserForm member={dialog.user} onClose={closeDialog} />}
       {dialog?.type === 'training' && canManage(user) && <TrainingForm material={dialog.material} onClose={closeDialog} />}
-      {dialog?.type === 'task-detail' && <TaskDetail task={dialog.task} actions={actions} onClose={closeDialog} />}
+      {dialog?.type === 'task-detail' && <TaskDetail task={dialog.task} context={dialog.context} actions={actions} onClose={closeDialog} />}
       {dialog?.type === 'equipment-detail' && <EquipmentDetail equipment={dialog.equipment} actions={actions} onClose={closeDialog} />}
       {dialog?.type === 'search' && <SearchModal actions={actions} onClose={closeDialog} />}
     </div>

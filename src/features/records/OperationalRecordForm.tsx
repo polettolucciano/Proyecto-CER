@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Avatar, Field, Icon, Modal, ModuleIcon, Photo } from '../../components';
-import { moduleById, modules } from '../../data';
+import { moduleById, workspaceModules } from '../../data';
 import { allowed, formatDate, today, uid } from '../../domain';
 import { controlOptions, evidenceCategories, recordModuleMeta } from '../../modules/recordModules';
 import { useApp } from '../../store';
@@ -57,15 +57,16 @@ function EvidenceUpload({ label, category, photos, onAdd, onRemove }: { label: s
 
 export function OperationalRecordForm({ initialModule, initialEquipment, task, sourceRecord, onClose }: { initialModule?: ModuleId; initialEquipment?: string; task?: Task; sourceRecord?: MaintenanceRecord; onClose: () => void }) {
   const { data, user, update, toast,remote } = useApp();
-  const available = modules.filter(module => allowed(user, module.id));
+  const catalog = workspaceModules(data);
+  const available = catalog.filter(module => allowed(user, module.id));
   const initialModuleId = sourceRecord?.module ?? task?.module ?? initialModule ?? available[0]?.id ?? 'generator';
   const initialEquipmentId = sourceRecord?.equipmentId ?? task?.equipmentId ?? initialEquipment ?? data.equipment.find(item => item.module === initialModuleId)?.id ?? '';
   const initialTaskId = sourceRecord?.taskId ?? task?.id ?? '';
   const initialDate = sourceRecord?.date ?? today();
   const [moduleId, setModuleId] = useState<ModuleId>(initialModuleId);
   const [pendingModule, setPendingModule] = useState<ModuleId | null>(null);
-  const module = sourceRecord?.formDefinition ?? moduleById(moduleId);
-  const meta = recordModuleMeta[moduleId] ?? { form: 'Registro de control', title: module.name, cadence: module.frequency, guidance: module.description };
+  const module = sourceRecord?.formDefinition ?? moduleById(moduleId, data.modules);
+  const meta = recordModuleMeta[moduleId] ?? { form: 'Registro de control', title: module.name, cadence: task?.frequency ?? module.frequency, guidance: module.description };
   const [equipmentId, setEquipmentId] = useState(initialEquipmentId);
   const [taskId, setTaskId] = useState(initialTaskId);
   const [date, setDate] = useState(initialDate);
@@ -231,7 +232,7 @@ export function OperationalRecordForm({ initialModule, initialEquipment, task, s
             <div className="record-context-strip"><ModuleIcon module={moduleId} small /><div><strong>{task?.title ?? equipment?.name ?? module.name}</strong><small>{formatDate(date)} · {user.name}</small></div><button type="button" className="text-button" aria-expanded={identificationOpen} onClick={() => setIdentificationOpen(value => !value)}>{identificationOpen ? 'Ocultar datos' : 'Ver datos'}</button></div>
             {task?.notes && <p className="task-instructions preserve-lines">{task.notes}</p>}
             <div className="record-identification" hidden={!identificationOpen}>
-              {pendingModule && <div className="module-change-confirmation" role="alert"><strong>¿Cambiar a {moduleById(pendingModule).name}?</strong><p>Las verificaciones, observaciones y fotos de este borrador se descartarán. Los registros guardados se conservan.</p><div><button type="button" className="button secondary small" onClick={() => setPendingModule(null)}>Seguir con este control</button><button type="button" className="button secondary small" onClick={() => applyModule(pendingModule)}>Cambiar formulario</button></div></div>}
+              {pendingModule && <div className="module-change-confirmation" role="alert"><strong>¿Cambiar a {moduleById(pendingModule, data.modules).name}?</strong><p>Las verificaciones, observaciones y fotos de este borrador se descartarán. Los registros guardados se conservan.</p><div><button type="button" className="button secondary small" onClick={() => setPendingModule(null)}>Seguir con este control</button><button type="button" className="button secondary small" onClick={() => applyModule(pendingModule)}>Cambiar formulario</button></div></div>}
               <div className="form-grid operational-grid"><Field label="Módulo" required><select value={moduleId} disabled={Boolean(task || sourceRecord)} onChange={event => changeModule(event.target.value as ModuleId)}>{available.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field><Field label="Fecha del control" required><input type="date" required max={today()} disabled={Boolean(sourceRecord)} value={date} onChange={event => { setDate(event.target.value); setDuplicateApproved(false); }} /></Field><Field label="Equipo o sector" required><select required value={equipmentId} disabled={Boolean(task || sourceRecord)} onChange={event => { setEquipmentId(event.target.value); setTaskId(''); setDuplicateApproved(false); }}><option value="">Seleccionar equipo</option>{data.equipment.filter(item => item.module === moduleId).map(item => <option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}</select></Field><Field label="Tarea programada" hint={sourceRecord ? 'La rectificación conserva la vinculación original.' : 'Si la vinculás, su próxima fecha se actualizará al guardar.'}><select value={taskId} disabled={Boolean(sourceRecord)} onChange={event => { setTaskId(event.target.value); setDuplicateApproved(false); }}><option value="">Control fuera de programación</option>{data.tasks.filter(item => item.active && item.module === moduleId && item.equipmentId === equipmentId).map(item => <option key={item.id} value={item.id}>{item.title} · {formatDate(item.due)}</option>)}</select></Field></div>
               {equipment && <div className="equipment-identity"><div><Icon name="Wrench" size={18} /><span><small>Equipo seleccionado</small><strong>{equipment.name}</strong></span></div><dl><div><dt>Código</dt><dd>{equipment.code}</dd></div><div><dt>Modelo</dt><dd>{equipment.model || 'Pendiente'}</dd></div><div><dt>Número</dt><dd>{equipment.serial || 'Pendiente'}</dd></div><div><dt>Ubicación</dt><dd>{equipment.location}</dd></div></dl></div>}
               <div className="responsible-card"><Avatar initials={user.initials} /><div><small>Quedará identificado como responsable del registro</small><strong>{user.name}</strong><span>{user.role}</span></div><Icon name="ShieldCheck" /></div>

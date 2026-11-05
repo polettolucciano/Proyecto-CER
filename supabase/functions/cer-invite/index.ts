@@ -13,8 +13,10 @@ Deno.serve(async(request:Request)=>{
   const {data:profile}=await caller.from('cer_profiles').select('role,active').eq('id',identity.user.id).single();
   if(!profile?.active || profile.role!=='Administrador')return response(403,'Solo Administración puede invitar integrantes.');
   const input=await readBoundedJson(request) as Record<string,unknown> | null;
-  const modules=['generator','osmosis','loop','crash','fumigation','electrical','rooms','general'];
-  if(!input || typeof input.name!=='string' || input.name.trim().length<2 || input.name.trim().length>150 || typeof input.email!=='string' || input.email.length>254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email) || typeof input.role!=='string' || !['Administrador','Enfermería'].includes(input.role) || !Array.isArray(input.modules) || input.modules.length>8 || input.modules.some((m:unknown)=>typeof m!=='string' || !modules.includes(m)) || (input.role!=='Administrador' && !input.modules.length))return response(400,'Revisá los datos.');
+  const {data:catalog,error:catalogError}=await caller.from('cer_modules').select('id');
+  if(catalogError)return response(503,'No se pudo consultar el catálogo de módulos. Intentá nuevamente.');
+  const modules=(catalog??[]).map((item:{id:string})=>item.id);
+  if(!input || typeof input.name!=='string' || input.name.trim().length<2 || input.name.trim().length>150 || typeof input.email!=='string' || input.email.length>254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email) || typeof input.role!=='string' || !['Administrador','Enfermería','Operador'].includes(input.role) || !Array.isArray(input.modules) || input.modules.length>300 || input.modules.some((m:unknown)=>typeof m!=='string' || !modules.includes(m)) || (input.role!=='Administrador' && !input.modules.length))return response(400,'Revisá los datos.');
   const admin=createClient(url,secret,{auth:{persistSession:false}});
   const {data:invited,error}=await admin.auth.admin.inviteUserByEmail(input.email.trim().toLowerCase(),{redirectTo:`${origin}/auth/callback`,data:{must_change_password:true}});
   if(error || !invited.user)return response(409,'No se pudo invitar ese correo. Revisá si ya tiene una cuenta.');

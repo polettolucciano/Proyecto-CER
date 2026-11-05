@@ -1,5 +1,5 @@
-import { modules } from '../../data';
-import { addDays, addMonths, nextDate, parseDate, today } from '../../domain';
+import { workspaceModules } from '../../data';
+import { addDays, addMonths, nextDate, nextTaskDate, parseDate, today, isCancelledDate, iso } from '../../domain';
 import type { MaintenanceRecord, Task, TeamUser, Workspace } from '../../types';
 
 export const reportMonths = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'] as const;
@@ -48,7 +48,10 @@ function previousDate(value: string, task: Task) {
     Semestral: -6,
     Anual: -12,
   };
-  return monthsBack[task.frequency] ? addMonths(value, monthsBack[task.frequency]!) : value;
+  if (!monthsBack[task.frequency]) return value;
+  const previous = addMonths(value, monthsBack[task.frequency]!);
+  if (!task.anchorDay) return previous;
+  const date = parseDate(previous); date.setDate(Math.min(task.anchorDay, new Date(date.getFullYear(), date.getMonth()+1, 0).getDate())); return iso(date);
 }
 
 /**
@@ -59,7 +62,7 @@ function previousDate(value: string, task: Task) {
 export function annualOccurrences(task: Task, year: number) {
   const start = `${year}-01-01`;
   const end = `${year}-12-31`;
-  if (task.frequency === 'Única') return task.due >= start && task.due <= end ? [task.due] : [];
+  if (task.frequency === 'Única') return task.due >= start && task.due <= end && !isCancelledDate(task, task.due) ? [task.due] : [];
 
   let cursor = task.due;
   for (let i = 0; i < 800 && cursor > start; i += 1) {
@@ -67,12 +70,12 @@ export function annualOccurrences(task: Task, year: number) {
     if (previous === cursor) break;
     cursor = previous;
   }
-  while (cursor < start) cursor = nextDate(cursor, task.frequency);
+  while (cursor < start) cursor = nextTaskDate(task, cursor);
 
   const dates: string[] = [];
   for (let i = 0; i < 800 && cursor <= end; i += 1) {
-    dates.push(cursor);
-    const next = nextDate(cursor, task.frequency);
+    if ((!task.startsOn || cursor >= task.startsOn) && !isCancelledDate(task, cursor)) dates.push(cursor);
+    const next = nextTaskDate(task, cursor);
     if (next === cursor) break;
     cursor = next;
   }
@@ -93,7 +96,7 @@ function recordsForTask(records: MaintenanceRecord[], taskId: string, year: numb
 
 export function buildAnnualReport(data: Workspace, tasks: Task[], year: number) {
   const currentDate = today();
-  const activeTasks = tasks.filter(task => task.active);
+  const activeTasks = tasks.filter(task => task.active || task.cancelledFrom || task.cancellations?.length || data.records.some(record => record.taskId === task.id));
   const rows = activeTasks.map<AnnualRow>(task => {
     const occurrences = annualOccurrences(task, year);
     const months = reportMonths.map((_, month) => {
@@ -121,7 +124,7 @@ export function buildAnnualReport(data: Workspace, tasks: Task[], year: number) 
     };
   });
 
-  const groups = modules.flatMap<AnnualGroup>(module => {
+  const groups = workspaceModules(data).flatMap<AnnualGroup>(module => {
     const moduleRows = rows.filter(row => row.task.module === module.id);
     return moduleRows.length ? [{ id: module.id, name: module.name, rows: moduleRows }] : [];
   });

@@ -17,7 +17,7 @@ export function TrainingPage({ onEdit }: { onEdit: (material?: Training) => void
 
   return <>
     <PageHeader title="Capacitaciones" description="Buscá un módulo y elegí el tema que querés consultar.">
-      <a className="button secondary" href="/capacitaciones"><Icon name="ExternalLink" size={16} />Ver biblioteca pública</a>
+
       {admin && <button className="button primary" onClick={() => onEdit()}><Icon name="Plus" size={17} />Agregar material</button>}
     </PageHeader>
     <TrainingModuleFilters materials={available} module={module} submodule={submodule} onChange={(nextModule, nextSubmodule) => { setModule(nextModule); setSubmodule(nextSubmodule); }} />

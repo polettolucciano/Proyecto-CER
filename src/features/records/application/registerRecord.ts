@@ -1,4 +1,5 @@
-import { advanceTask, uid } from '../../../domain';
+import { moduleById } from '../../../data';
+import { advanceTask, isCancelledDate, uid } from '../../../domain';
 import type { Attachment, MaintenanceRecord, ModuleId, Values, Workspace } from '../../../types';
 import { auditEvent } from '../../../workspace';
 
@@ -39,10 +40,11 @@ export function createMaintenanceRecord(
 }
 
 export function registerRecordInWorkspace(workspace: Workspace, record: MaintenanceRecord, sourceRecord?: MaintenanceRecord): Workspace {
+  if (!sourceRecord && record.taskId) { const task = workspace.tasks.find(item => item.id === record.taskId); if (!task?.active || isCancelledDate(task, record.date)) throw new Error('Ese control fue cancelado o su programación ya no está activa. Actualizá la planificación.'); }
   return {
     ...workspace,
     records: [
-      record,
+      { ...record, formDefinition: sourceRecord?.formDefinition ?? moduleById(record.module, workspace.modules) },
       ...workspace.records.map(item => item.id === sourceRecord?.id
         ? { ...item, status: 'superseded' as const, supersededById: record.id }
         : item),

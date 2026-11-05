@@ -20,7 +20,7 @@ export function PublicTrainingContent({materials:source,remote=false}:{materials
   return <div className="public-training-shell">
     <header className="public-training-header">
       <a className="public-training-brand" href="/capacitaciones" aria-label="Biblioteca pública CER, inicio"><img src="/cer-logo.png" width={58} height={49} alt="" /><span><strong>Centro de Enfermedades Renales</strong><small>Biblioteca de capacitaciones</small></span></a>
-      <a className="button secondary" href="/#training"><Icon name="LogOut" size={16} />Ingresar a gestión</a>
+      <a className="button secondary" href="/capacitaciones/administrar"><Icon name="LogOut" size={16} />Administrar capacitaciones</a>
     </header>
 
     <main className="public-training-main">

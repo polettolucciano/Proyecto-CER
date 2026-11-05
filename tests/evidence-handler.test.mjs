@@ -10,9 +10,9 @@ const source=readFileSync('supabase/functions/cer-evidence/index.ts','utf8').rep
 const javascript=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None}}).outputText;
 const origin='https://proyecto-cer.vercel.app';
 const actor='00000000-0000-4000-8000-000000000002',operation='00000000-0000-4000-8000-000000000005';
-function service({signedIn=true,active=true,modules=['generator'],existing=false}={}){
+function service({signedIn=true,active=true,modules=['generator'],existing=false,catalogModules=[]}={}){
  let handler,decodes=0,uploads=0;
- const caller={auth:{getUser:async()=>({data:{user:signedIn?{id:actor}:null},error:signedIn?null:{}})},from:()=>({select:()=>({eq:()=>({single:async()=>({data:{role:'Enfermería',active,modules},error:null})})})})};
+ const caller={auth:{getUser:async()=>({data:{user:signedIn?{id:actor}:null},error:signedIn?null:{}})},from:table=>({select:()=>({eq:(_key,id)=>({single:async()=>table==='cer_modules'?{data:catalogModules.includes(id)?{id}:null,error:null}:{data:{role:'Enfermería',active,modules},error:null}})})})};
  const storage={info:async()=>existing?{data:{size:12},error:null}:{error:{}},upload:async()=>{uploads++;return {error:null};}};
  const admin={storage:{from:()=>storage}};
  vm.runInNewContext(javascript,{Deno:{env:{get:key=>key==='SUPABASE_SERVICE_ROLE_KEY'?'server-only':key==='CER_APP_ORIGINS'?origin:'public'},readFile:async()=>new Uint8Array(),serve:fn=>{handler=fn;}},createClient:(_url,key)=>key==='server-only'?admin:caller,initializeImageEngine:async()=>{},optimizeImage:()=>{decodes++;return {bytes:new Uint8Array([1]),originalBytes:3,storedBytes:1,width:1,height:1};},MAX_INPUT_BYTES:5*1024*1024,TRANSFORM_VERSION:'webp-v1',Request,Response,File,Uint8Array,URL,crypto,console});
@@ -39,4 +39,10 @@ test('fotos: corta una carga mayor al límite antes de procesarla',async()=>{
 test('fotos: servidor define la ruta del actor; un reintento reutiliza el objeto',async()=>{
  const first=service(),response=await first.invoke(form());assert.equal(response.status,200);const result=await response.json();assert.ok(result.path.startsWith(`generator/${actor}/${operation}/photo-1-webp-v1-`));assert.deepEqual(first.counts(),{decodes:1,uploads:1});
  const retry=service({existing:true}),retried=await retry.invoke(form());assert.equal(retried.status,200);const reused=await retried.json();assert.equal(reused.path,result.path);assert.equal(reused.reused,true);assert.deepEqual(retry.counts(),{decodes:0,uploads:0});
+});
+test('fotos: módulos nuevos requieren acceso de perfil y existencia en catálogo antes de procesar',async()=>{
+ const module='custom-00000000-0000-4000-8000-000000000004';
+ const allowed=service({modules:[module],catalogModules:[module]});assert.equal((await allowed.invoke(form({module}))).status,200);
+ const missing=service({modules:[module]});assert.equal((await missing.invoke(form({module}))).status,400);assert.equal(missing.counts().decodes,0);
+ const forbidden=service({catalogModules:[module]});assert.equal((await forbidden.invoke(form({module}))).status,403);assert.equal(forbidden.counts().decodes,0);
 });

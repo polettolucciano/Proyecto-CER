@@ -4,11 +4,11 @@ import type { ModuleId, Page } from './types';
 
 export interface AppRoute { page: Page; module?: ModuleId; equipmentId?: string; view?: string; }
 const legacyPages = ['equipment', 'reports', 'summary', 'users'];
-const views: Partial<Record<Page, string[]>> = { planning: ['list', 'calendar', 'annual'], records: ['recent'], settings: ['team', 'center'] };
+const views: Partial<Record<Page, string[]>> = { planning: ['list', 'calendar', 'annual'], records: ['recent'], settings: ['team', 'center', 'modules'] };
 
 export function parseRoute(hash: string): AppRoute {
   const [path, query] = hash.replace(/^#/, '').split('?');
-  const known = [...legacyPages, 'public-training', ...navigation.map(item => item.id)];
+  const known = [...legacyPages, 'public-training', 'training', ...navigation.map(item => item.id)];
   const destination = canonicalDestination(known.includes(path) ? path as Page : 'dashboard');
   const params = new URLSearchParams(query);
   const module = params.get('module');
@@ -16,7 +16,7 @@ export function parseRoute(hash: string): AppRoute {
   return {
     page: destination.page,
     view: views[destination.page]?.includes(requestedView) ? requestedView : undefined,
-    module: modules.some(item => item.id === module) ? module as ModuleId : undefined,
+    module: (modules.some(item => item.id === module) || /^custom-[a-f0-9-]{36}$/.test(module ?? '')) ? module as ModuleId : undefined,
     equipmentId: params.get('equipment') || undefined,
   };
 }

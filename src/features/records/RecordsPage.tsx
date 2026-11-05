@@ -31,7 +31,7 @@ export function RecordsPage({ actions, initialModule, initialEquipment, initialR
     && (result === 'all' || record.result === result)
     && (lifecycle === 'all' || record.status === lifecycle)
     && (!from || record.date >= from) && (!to || record.date <= to)
-    && `${record.id} ${moduleById(record.module).name} ${data.users.find(user => user.id === record.userId)?.name} ${record.notes}`.toLowerCase().includes(query.toLowerCase()),
+    && `${record.id} ${moduleById(record.module, data.modules).name} ${data.users.find(user => user.id === record.userId)?.name} ${record.notes}`.toLowerCase().includes(query.toLowerCase()),
   ).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
   const current = Math.min(page, Math.max(1, Math.ceil(records.length / PAGE_SIZE)));
   const pages = Math.max(1, Math.ceil(records.length / PAGE_SIZE));

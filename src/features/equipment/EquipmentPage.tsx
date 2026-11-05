@@ -18,7 +18,7 @@ export function EquipmentPage({ actions }: { actions: AppActions }) {
   const filtered = data.equipment.filter(equipment =>
     (module === 'all' || equipment.module === module)
     && (status === 'all' || equipment.status === status)
-    && `${equipment.name} ${equipment.code} ${equipment.location} ${moduleById(equipment.module).name}`.toLowerCase().includes(query.trim().toLowerCase()),
+    && `${equipment.name} ${equipment.code} ${equipment.location} ${moduleById(equipment.module, data.modules).name}`.toLowerCase().includes(query.trim().toLowerCase()),
   );
   const filtering = module !== 'all' || status !== 'all';
   return <>
@@ -27,7 +27,7 @@ export function EquipmentPage({ actions }: { actions: AppActions }) {
     </PageHeader>
     <div className="sector-toolbar"><SearchField value={query} onChange={setQuery} placeholder="Buscar un equipo o sector…" /><button className="text-button" aria-expanded={filtersOpen} aria-controls="sector-filters" onClick={() => setFiltersOpen(value => !value)}><Icon name="SlidersHorizontal" size={16} />Filtrar{filtering ? ' (activos)' : ''}</button></div>
     <div id="sector-filters" className="sector-filters" hidden={!filtersOpen}>
-      <label>Módulo<select value={module} onChange={event => setModule(event.target.value)}><option value="all">Todos los módulos</option>{Array.from(new Set(data.equipment.map(item => item.module))).map(id => <option key={id} value={id}>{moduleById(id).name}</option>)}</select></label>
+      <label>Módulo<select value={module} onChange={event => setModule(event.target.value)}><option value="all">Todos los módulos</option>{Array.from(new Set(data.equipment.map(item => item.module))).map(id => <option key={id} value={id}>{moduleById(id, data.modules).name}</option>)}</select></label>
       <label>Estado<select value={status} onChange={event => setStatus(event.target.value)}><option value="all">Todos los estados</option><option>Operativo</option><option>En mantenimiento</option><option>Fuera de servicio</option></select></label>
       {filtering && <button className="text-button" onClick={() => { setModule('all'); setStatus('all'); }}>Limpiar filtros</button>}
     </div>

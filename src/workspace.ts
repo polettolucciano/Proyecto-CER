@@ -14,6 +14,7 @@ export function normalizeWorkspace(value: unknown): Workspace | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const candidate = value as LegacyWorkspace;
   if (!Array.isArray(candidate.equipment) || !Array.isArray(candidate.users) || !Array.isArray(candidate.tasks) || !Array.isArray(candidate.records) || !Array.isArray(candidate.training) || !candidate.settings) return undefined;
+  if (candidate.modules !== undefined && (!Array.isArray(candidate.modules) || !candidate.modules.every(module => module && typeof module.id === 'string' && typeof module.name === 'string' && Array.isArray(module.sections) && module.sections.every(section => Array.isArray(section.fields))))) return undefined;
   if (!candidate.users.some(user => user && user.active && user.role === 'Administrador')) return undefined;
   if (!candidate.records.every(record => record && typeof record.id === 'string' && typeof record.createdAt === 'string' && record.values && typeof record.values === 'object' && Array.isArray(record.photos))) return undefined;
   if (!candidate.training.every(material => material && typeof material.id === 'string' && typeof material.url === 'string')) return undefined;
@@ -22,7 +23,7 @@ export function normalizeWorkspace(value: unknown): Workspace | undefined {
     version: 2,
     // Only used for local demo data. Preserve historical authors while giving
     // the single nursing demo profile access to all maintenance modules.
-    users: candidate.users.map(user => ({ ...user, role: normalizeRole(user.role), ...(normalizeRole(user.role) === 'Enfermería' ? { modules: modules.map(module => module.id) } : {}) })) as Workspace['users'],
+    users: candidate.users.map(user => ({ ...user, role: normalizeRole(user.role), ...(normalizeRole(user.role) === 'Enfermería' ? { modules: [...new Set([...modules.map(module => module.id), ...user.modules])] } : {}) })) as Workspace['users'],
     records: candidate.records.map(record => ({
       ...record,
       status: record.status ?? 'active',

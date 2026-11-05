@@ -1,4 +1,4 @@
-import type { Module, ModuleId } from '../types';
+import type { Module, ModuleId, Workspace } from '../types';
 
 const check = (id: string, label: string, hint?: string) => ({ id, label, type: 'check' as const, hint });
 const number = (id: string, label: string, unit?: string, hint?: string) => ({ id, label, type: 'number' as const, unit, hint });
@@ -24,6 +24,13 @@ export const modules: Module[] = [
   ...([['crash', 'Carro de paro', 'Verificación del equipo y los insumos.', 'rose', 'HeartPulse', 'Mensual'], ['fumigation', 'Fumigación', 'Intervenciones y control de plagas.', 'purple', 'Bug', 'Bimestral'], ['electrical', 'Electricidad', 'Instalaciones, iluminación y puesta a tierra.', 'amber', 'Plug', 'Anual'], ['rooms', 'Salas', 'Condiciones e instalaciones de cada sector.', 'blue', 'Building2', 'Mensual'], ['general', 'Otros mantenimientos', 'Seguridad, servicios y controles generales.', 'slate', 'Wrench', 'Mensual']] as const).map(([id, name, description, color, icon, frequency]) => ({ id, name, short: name, description, color, icon, frequency, defined: false, sections: [{ title: 'Registro de intervención', description: 'Ficha inicial. El checklist específico se incorporará con la planilla de CER.', fields: [{ id: 'work', label: 'Trabajo o control realizado', type: 'text' as const }, { id: 'provider', label: 'Proveedor o técnico interviniente', type: 'text' as const, optional: true }] }] })),
 ];
 
-export const moduleById = (id: ModuleId) => modules.find(module => module.id === id)!;
+export function workspaceModules(data: Pick<Workspace, 'modules'>): Module[] {
+  const overrides = data.modules ?? [];
+  return [...modules.map(module => overrides.find(item => item.id === module.id) ?? module), ...overrides.filter(module => !modules.some(item => item.id === module.id))];
+}
+export const moduleById = (id: ModuleId, overrides: Module[] = []) => overrides.find(module => module.id === id) ?? modules.find(module => module.id === id) ?? { ...modules[modules.length - 1], id, name: 'Módulo no disponible' };
+export function createGeneralModule(id: ModuleId, name: string): Module {
+  return { ...modules.find(module => module.id === 'general')!, id, name, short: name, custom: true, description: '', sections: [{ title: 'Registro de mantenimiento', fields: [{ id: 'work', label: 'Trabajo o control realizado', type: 'text' }, { id: 'provider', label: 'Proveedor o técnico interviniente', type: 'text', optional: true }] }] };
+}
 export const frequencies = ['Diaria', 'Semanal', 'Quincenal', 'Mensual', 'Bimestral', 'Trimestral', 'Semestral', 'Anual', 'Única'] as const;
 

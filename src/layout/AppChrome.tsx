@@ -82,20 +82,20 @@ export function Topbar(props: TopbarProps) {
         <div className="profile-menu" ref={profileRef}>
           <button className="profile-trigger" aria-label={remote?'Abrir menú de cuenta':'Abrir perfiles de demostración'} aria-expanded={props.profileOpen} onClick={props.onProfileToggle}>
             <Avatar initials={props.user.initials} />
-            <span><strong>{!remote && props.user.role === 'Enfermería' ? 'Enfermería' : props.user.name}</strong><small>{props.user.role}</small></span>
+            <span><strong>{props.user.name}</strong><small>{props.user.role}</small></span>
             <Icon name="ChevronDown" size={14} />
           </button>
           {props.profileOpen && (
             <div className="profile-dropdown">
               {remote ? <><div className="dropdown-heading">{props.user.name}<small>{props.user.role}</small></div><button onClick={()=>void refresh()}>Actualizar datos</button><button onClick={()=>void signOut()}>Cerrar sesión</button></> : <><div className="dropdown-heading">Perfiles de demostración<small>La autorización real se implementará con el backend.</small></div>
-              {(['Administrador', 'Enfermería'] as const).map(role => <section className="demo-role-group" key={role} aria-label={`Probar rol ${role}`}><h3>{role}</h3>{props.users.filter(item => item.active && item.role === role).slice(0, 1).map(item => (
+              {(['Administrador', 'Enfermería', 'Operador'] as const).map(role => <section className="demo-role-group" key={role} aria-label={`Probar rol ${role}`}><h3>{role}</h3>{props.users.filter(item => item.active && item.role === role).map(item => (
                 <button key={item.id} onClick={() => props.onProfileChange(item.id)}>
                   <Avatar initials={item.initials} className="tiny-avatar" />
-                  <span><strong>{item.role}</strong><small>{item.role === 'Enfermería' ? 'Todos los controles del equipo' : item.name}</small></span>
+                  <span><strong>{item.name}</strong><small>{item.role}</small></span>
                   {item.id === props.user.id && <Icon name="Check" size={16} />}
                 </button>
               ))}</section>)}
-              {props.users.some(item => item.active && item.role === 'Supervisor') && <details className="legacy-demo-profiles"><summary>Otros perfiles existentes</summary>{props.users.filter(item => item.active && item.role === 'Supervisor').map(item => <button key={item.id} onClick={() => props.onProfileChange(item.id)}><Avatar initials={item.initials} className="tiny-avatar" /><span><strong>{item.role}</strong><small>{item.role === 'Enfermería' ? 'Todos los controles del equipo' : item.name}</small></span>{item.id === props.user.id && <Icon name="Check" size={16} />}</button>)}</details>}</>}
+              {props.users.some(item => item.active && item.role === 'Supervisor') && <details className="legacy-demo-profiles"><summary>Otros perfiles existentes</summary>{props.users.filter(item => item.active && item.role === 'Supervisor').map(item => <button key={item.id} onClick={() => props.onProfileChange(item.id)}><Avatar initials={item.initials} className="tiny-avatar" /><span><strong>{item.name}</strong><small>{item.role}</small></span>{item.id === props.user.id && <Icon name="Check" size={16} />}</button>)}</details>}</>}
             </div>
           )}
         </div>

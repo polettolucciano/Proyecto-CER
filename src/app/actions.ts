@@ -6,7 +6,8 @@ export interface AppActions {
   newRecord: (module?: ModuleId, task?: Task, equipmentId?: string) => void;
   viewRecord: (record: MaintenanceRecord) => void;
   editTask: (task?: Task) => void;
-  viewTask: (task: Task) => void;
+  viewTask: (task: Task, context?: { date?: string; month?: string }) => void;
+  cancelTask: (task: Task, date: string) => void;
   editEquipment: (equipment?: Equipment) => void;
   viewEquipment: (equipment: Equipment) => void;
   editUser: (user?: TeamUser) => void;

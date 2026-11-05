@@ -1,6 +1,7 @@
+import type { AppActions } from '../../app/actions';
 import { Fragment, useMemo, useState } from 'react';
 import { DownloadButton, Icon, ModuleIcon } from '../../components';
-import { modules } from '../../data';
+import { workspaceModules } from '../../data';
 import { allowed, visibleData } from '../../domain';
 import { exportAnnualProgram } from '../../export';
 import { useApp } from '../../store';
@@ -13,14 +14,14 @@ const stateText = {
   alert: 'No realizado o con falla',
 };
 
-function CellMark({ cell, task }: { cell: AnnualCell; task: string }) {
+function CellMark({ cell, task, period, onOpen }: { cell: AnnualCell; task: string; period: string; onOpen: () => void }) {
   const detail = cell.state === 'empty'
     ? 'Sin actividad'
     : `${stateText[cell.state]}. ${cell.recorded} registrados de ${cell.planned} previstos${cell.attention ? `; ${cell.attention} con falla u observación` : ''}${cell.overdue ? `; ${cell.overdue} no realizados en término` : ''}.`;
   return (
-    <span className={`program-mark ${cell.state}`} title={`${task}: ${detail}`} aria-label={`${task}: ${detail}`}>
+    <button type="button" onClick={onOpen} className={`program-mark ${cell.state}`} title={`${task} · ${period}: ${detail}`} aria-label={`${task} · ${period}: ${detail}`}>
       {cell.state === 'empty' ? <span aria-hidden="true">—</span> : <><strong>{cell.recorded || cell.planned}</strong><small>{cell.recorded ? `/${cell.planned}` : 'prev.'}</small></>}
-    </span>
+    </button>
   );
 }
 
@@ -28,8 +29,9 @@ function ReportMetric({ icon, label, value, tone }: { icon: string; label: strin
   return <div className={`report-metric ${tone}`}><span><Icon name={icon} size={18} /></span><div><strong>{value.toLocaleString('es-AR')}</strong><small>{label}</small></div></div>;
 }
 
-export function ReportsPage() {
+export function ReportsPage({ actions }: { actions: AppActions }) {
   const { data, user, toast } = useApp();
+  const catalog = workspaceModules(data);
   const visible = visibleData(data, user);
   const [year, setYear] = useState(currentReportYear);
   const [module, setModule] = useState<string>('all');
@@ -59,12 +61,12 @@ export function ReportsPage() {
         <h2 id="program-title" className="annual-section-title">Cronograma anual <span>F-PME-00</span></h2>
         <div className="program-toolbar">
           <div className="year-switcher"><button className="icon-button" aria-label="Año anterior" onClick={() => setYear(value => value - 1)}><Icon name="ChevronLeft" /></button><span><small>Año del informe</small><strong>{year}</strong></span><button className="icon-button" aria-label="Año siguiente" onClick={() => setYear(value => value + 1)}><Icon name="ChevronRight" /></button></div>
-          <label className="program-module-filter"><span>Módulo</span><select aria-label="Filtrar programa por módulo" value={module} onChange={event => setModule(event.target.value)}><option value="all">Todos los módulos</option>{modules.filter(item => allowed(user, item.id)).map(item => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label className="program-module-filter"><span>Módulo</span><select aria-label="Filtrar programa por módulo" value={module} onChange={event => setModule(event.target.value)}><option value="all">Todos los módulos</option>{catalog.filter(item => allowed(user, item.id)).map(item => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
           <button className="button secondary small" onClick={() => setYear(currentReportYear())}><Icon name="CalendarDays" size={15} />Ir al año actual</button>
         </div>
 
         <div className="report-metrics">
-          <ReportMetric icon="ClipboardCheck" label="tareas activas" value={annual.summary.tasks} tone="navy" />
+          <ReportMetric icon="ClipboardCheck" label="programaciones" value={annual.summary.tasks} tone="navy" />
           <ReportMetric icon="CalendarDays" label="controles previstos" value={annual.summary.planned} tone="blue" />
           <ReportMetric icon="CheckCircle2" label="registros vinculados" value={annual.summary.recorded} tone="green" />
           <ReportMetric icon="TriangleAlert" label="vencidas o con falla" value={annual.summary.overdue + annual.summary.attention} tone="amber" />
@@ -84,7 +86,7 @@ export function ReportsPage() {
                 <th className="activity-column"><strong>{row.task.title}</strong><small>{row.equipment}</small></th>
                 <td className="owner-column"><span className="owner-initials">{row.responsible?.initials ?? '—'}</span><span>{row.responsible?.name ?? 'Sin asignar'}</span></td>
                 <td><span className="frequency-label">{row.task.frequency}</span></td>
-                {row.months.map((cell, index) => <td className={index === currentMonth ? 'current-month' : ''} key={reportMonths[index]}><CellMark cell={cell} task={row.task.title} /></td>)}
+                {row.months.map((cell, index) => <td className={index === currentMonth ? 'current-month' : ''} key={reportMonths[index]}><CellMark cell={cell} task={row.task.title} period={`${reportMonths[index]} ${year}`} onOpen={() => actions.viewTask(row.task, { month: `${year}-${String(index + 1).padStart(2, '0')}` })} /></td>)}
               </tr>)}
             </Fragment>)}</tbody>
           </table>

@@ -9,6 +9,9 @@ export const supabase=backendMode==='supabase' && url && key ? createClient(url,
 export function backendMessage(error:unknown):string {
  const message=error && typeof error==='object' && 'message' in error ? String(error.message) : '';
  const code=error && typeof error==='object' && 'code' in error ? String(error.code) : '';
+ if(/CONTROL_CANCELLED|TASK_INACTIVE/.test(message))return 'Ese control fue cancelado o ya no está activo. Actualizá la planificación.';
+ if(/CONTROL_ALREADY_RECORDED/.test(message))return 'Ese control ya tiene registros realizados. Consultá el historial; no se eliminaron datos.';
+ if(/INVALID_ASSIGNEE/.test(message))return 'Elegí un responsable activo con acceso al módulo.';
  if(/VERSION_CONFLICT/.test(message))return 'Otra persona modificó la información. Recargá los datos antes de volver a guardar.';
  if(/RECURRENCE_RULE_REQUIRED/.test(message))return 'Administración debe confirmar la regla de próxima fecha de esta tarea antes de completarla.';
  if(/DUPLICATE_CONFIRMATION_REQUIRED/.test(message))return 'Ya existe un control para este equipo y fecha. Revisá el historial y confirmá si es independiente.';
